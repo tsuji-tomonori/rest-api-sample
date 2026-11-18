@@ -14,6 +14,8 @@
 | 依頼42の状態を変える | `PATCH /repair-requests/42` | `200` と、変更後の内容が返る |
 | 誤って登録した依頼42を削除する | `DELETE /repair-requests/42` | 本文のない `204` が返る |
 
+読み取りには `HEAD` という選択肢もあります。`GET` と同じ対象について、本文を送らずにヘッダーを返すメソッドです。`OPTIONS` は、対象で利用できる通信上の選択肢を問い合わせます。修理依頼で画面に必要な操作は上の5つです。[RFC 9110 §9.3.2 HEAD](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.2)・[§9.3.7 OPTIONS](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.7)
+
 ### 状態だけを変えるとき
 
 担当者が「完了」を押したとき、件名と場所はそのまま残します。この API が受け取る変更指示は次のとおりです。

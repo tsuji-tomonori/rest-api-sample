@@ -41,8 +41,11 @@ jobs:
       - name: Synthesize the infrastructure
         working-directory: package/infra
         run: npx --yes --package=aws-cdk@2 cdk synth RepairApi --no-lookups --quiet
-      - name: Build the Lambda image
-        run: docker build --platform linux/amd64 --provenance=false -t repair-sample .
+      - name: Build the image staged by CDK
+        run: |
+          dockerfile=$(find package/infra/cdk.out -type f -name Dockerfile -print -quit)
+          test -n "$dockerfile"
+          docker build --platform linux/amd64 --provenance=false -t repair-sample "$(dirname "$dockerfile")"
       - name: Import the packaged Lambda handlers
         run: >-
           docker run --rm --entrypoint python repair-sample -c

@@ -1,7 +1,10 @@
+import asyncio
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
-from package.app.main import app
+from package.app.main import app, handler
 from package.db.migrate import upgrade
 
 
@@ -109,3 +112,22 @@ def test_openapi_matches_error_media_type_and_creation(client):
     for code in ("400", "415", "422"):
         assert set(responses[code]["content"]) == {"application/problem+json"}
     assert "content" not in paths[COLLECTION + "/{request_id}"]["delete"]["responses"]["204"]
+
+
+def test_lambda_handles_api_gateway_v2_event(client):
+    event = {
+        "version": "2.0",
+        "routeKey": "$default",
+        "rawPath": COLLECTION,
+        "rawQueryString": "",
+        "headers": {"host": "example.execute-api.ap-northeast-1.amazonaws.com"},
+        "requestContext": {
+            "stage": "$default",
+            "http": {"method": "GET", "path": COLLECTION, "sourceIp": "127.0.0.1"},
+        },
+        "isBase64Encoded": False,
+    }
+    with asyncio.Runner():
+        response = handler(event, None)
+    assert response["statusCode"] == 200
+    assert json.loads(response["body"]) == {"items": [], "next_after": None}

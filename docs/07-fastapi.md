@@ -35,6 +35,8 @@ python3.12 -m venv .venv
 
 4行目のサーバーを起動したまま、ブラウザーで [操作画面](http://127.0.0.1:8000/docs) を開きます。この画面は Swagger UI といい、FastAPI が生成した仕様書を使って、実際の要求を送れます。同じ仕様をデータとして読みたいときは [OpenAPI の定義](http://127.0.0.1:8000/openapi.json) を開きます。[FastAPI の公式チュートリアル](https://fastapi.tiangolo.com/tutorial/first-steps/)
 
+操作画面は表示用のファイルを外部の配信元から読み込みます。社内ネットワークから画面を開けないときも、ブラウザーで <http://127.0.0.1:8000/repair-requests> を開けば、一覧取得を試せます。作りたての台帳なら `{"items":[],"next_after":null}` と表示されます。[FastAPI の操作画面と配信元](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/)
+
 ## 1件登録して、受付番号で追いかける
 
 1. 「POST /repair-requests」を開き、**Try it out** を押します。

@@ -45,6 +45,8 @@ Content-Type: application/problem+json
 
 AWS では、権限の確認をする API Gateway も応答を返します。FastAPI に届く前に要求を拒んだ場合、本文の形式はアプリが決めた形式と異なることがあります。画面は先にステータスと `Content-Type` を確認してから本文を読みます。また、サーバーが一時的に利用できない `503` では、応答に `Retry-After` があれば再試行の目安になります。再送できる操作かどうかは第4章の考え方で判断します。[AWS「Control access to HTTP APIs with IAM authorization」](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-access-control-iam.html)・[RFC 9110 §15.6.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.6.4)
 
+別の API を設計するときは、利用者が取り得る行動からエラーを選べます。認証情報が必要なら `401` と `WWW-Authenticate` で認証方式を知らせます。本人を確認できても、その人に操作を許可しない場合は `403` が候補です。一定の時間内に要求が集中し、利用者が頻度を落とせば解決する場合は `429 Too Many Requests` が使えます。[RFC 9110 §15.5.2、§15.5.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.2)・[RFC 6585 §4](https://www.rfc-editor.org/rfc/rfc6585.html#section-4)
+
 ## 以前に見た依頼は、今も同じだろうか
 
 ブラウザーなどには、以前の応答を保存し、同じ問い合わせに再利用する仕組みがあります。これをキャッシュと呼びます。受付時の応答にあった `Cache-Control: no-store` は、キャッシュへの保存を禁じる指定です。この教材では社内の修理情報にこの方針を採り、依頼を開くたびにサーバーに問い合わせます。[RFC 9111 §5.2.2.5](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2.5)
