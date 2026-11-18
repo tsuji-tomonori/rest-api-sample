@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!.dockerignore
+!package
+package/*
+!package/app
+!package/app/**
+!package/db
+!package/db/**
+**/__pycache__
+**/*.pyc
+**/*.db
+**/.venv
