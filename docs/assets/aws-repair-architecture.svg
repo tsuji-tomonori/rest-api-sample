@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="850" height="672" viewBox="0 0 850 672" role="img" aria-labelledby="title desc" lang="ja">
+  <title id="title">修理依頼 API の AWS 構成</title>
+  <desc id="desc">クライアントが HTTPS で送った IAM 署名付きリクエストを API Gateway が検証し、FastAPI を実行する Lambda を呼ぶ。Lambda はアプリ用の VPC に接続する。隔離サブネット内の接続口から、Aurora PostgreSQL へ TCP 5432 で接続し、Secrets Manager へは VPC エンドポイントを経由して HTTPS 443 で DB 認証情報を取得する。</desc>
+  <metadata>AWS service icons © Amazon Web Services, Inc. or its affiliates.
+    Source: https://github.com/awslabs/aws-icons-for-plantuml/tree/v23.1
+    License: https://creativecommons.org/licenses/by-nd/2.0/</metadata>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#25485a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <style>
+    text {font-family: "Yu Gothic", Meiryo, "Noto Sans CJK JP", sans-serif; fill: #203c48}
+    .name {font-size: 22px; font-weight: 700}
+    .detail {font-size: 16px}
+    .group {font-size: 20px; font-weight: 700}
+    .subgroup {font-size: 18px; font-weight: 700; fill: #215d54}
+    .edge {fill: none; stroke: #25485a; stroke-width: 2.6; marker-end: url(#arrow)}
+    .label {font-size: 16px; font-weight: 600; fill: #25485a}
+    .service {fill: #fff; stroke: #65818f; stroke-width: 1.5}
+    .private {fill: #fff; stroke: #4e8477; stroke-width: 1.5}
+  </style>
+  <rect width="850" height="672" rx="12" fill="#fff"/>
+  <rect x="17" y="119" width="816" height="536" rx="15" fill="#f4f8fa" stroke="#647f8d" stroke-width="2"/>
+  <text x="39" y="151" class="group">AWS クラウド</text>
+
+  <rect x="40" y="280" width="770" height="278" rx="11" fill="#eaf4f0" stroke="#4e8477" stroke-width="2"/>
+  <text x="59" y="311" class="group">アプリ用の VPC</text>
+  <rect x="58" y="326" width="734" height="215" rx="9" fill="#f5faf7" stroke="#699488" stroke-width="1.6" stroke-dasharray="6 5"/>
+  <text x="78" y="354" class="subgroup">隔離サブネット</text>
+
+  <rect x="49" y="16" width="295" height="67" rx="9" fill="#f5f3ed" stroke="#908568" stroke-width="1.5"/>
+  <text x="67" y="45" class="name">クライアント</text>
+  <text x="67" y="69" class="detail">AWS の認証情報で署名して送信</text>
+  <path d="M 220 83 V 173" class="edge"/>
+  <text x="235" y="107" class="label">HTTPS</text>
+
+  <rect x="48" y="177" width="304" height="72" rx="9" class="service"/>
+  <image x="60" y="190" width="44" height="44" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAMISURBVHgB7Zs/aBRBFMa/FUFBSCqv0iKolTbGIminjWmOWGkabfxTprESUgZsFMEyYq9Wio1V7BQLrWInWNhpZSBFquQ+Xh432WySnd33dg9mfnDM3u7e7rxv3ns7b9grni1sbyNhjiFxsgBInCwAEicLgMTJAiBxjsOBs5eA+SXZfvUIrXi4Ku2XN8DPNZhjKsD0ALi5JAJYMTWQdn73ul9HQvz/CzNMBDhxCpgdAleGsr21Ka0lGyOjL96QD73hx0e5T1ta5wB2iG56bVGMZsfaun0Vb5fHIcB73Xsh925LYw+gO15dHLv7n3VxT7Ye0AM+vZTRv7MiocGwoBjvlpuHRbQAHGUaTncndMPPr30SVBUUgh7G0afxFOLBqty/SX6IEkAN1zinu383isVYaPCvb9If9ouC0BvZH/arLrUFYJxrRqab0x03DLNxEyg8Q2J9TbyBIly/L6LUzUO1BVDjGW9ecd4UzQ/sF/OC9rUO0U+BSTM+pEkecpkJhjx+L+3zW3u/x+zzJNcCcEZH9KDvR+3z9oRcDiNxsgCYAAYz6I3eBeD09e6oslt4gl7oTAAulswO9+/Xklan1TxnOmIm15ZOBKBBt1dknl4W4dyctCxieIzn8NyuRHAXQI3n/JyjzApO4eifHFWW/36Pj7GdGnQngrsAofFc1QkryPPB6JPwHBXBm06TYBFsc3RVgLDAKtAt7gKUR1Td+szuUpq6PSmHC3/rjbsAZbfWpKfJMMwJPHZQuHjhXgwRNejCnCxXcaQ5+eGKTljD61JW6BXedCIAoUGa7C5XjL4Ss55nQS8zQc0DXa0kH0ZnHhDy4Slwekae/33TWy0wCcaTXA4jcfKqMBInrwojcaIFsHgpwYsmfasdAlrM6EsJXi8tNSF8V4DE1BG1BSi/lDAJQlQZHtufqCTIC/PTtxAWhiuNngJ9CWFpuFJY/GWmqmO6XfWIi0Efg+E1LQxXTOYBVR5hja4UWXuY6USoLIQFmtG9QqvI/xpLnCwAEicLgMTJAiBxsgBInB0u6Dl5mu5b5wAAAABJRU5ErkJggg=="/>
+  <text x="114" y="209" class="name">API Gateway</text>
+  <text x="114" y="234" class="detail">HTTP API で署名・権限を確認</text>
+  <path d="M 352 213 H 495" class="edge"/>
+  <text x="423" y="199" class="label" text-anchor="middle">関数を呼び出す</text>
+
+  <rect x="500" y="177" width="279" height="72" rx="9" class="service"/>
+  <image x="512" y="190" width="44" height="44" href="data:image/png;base64,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"/>
+  <text x="566" y="209" class="name">API 用 Lambda</text>
+  <text x="566" y="234" class="detail">FastAPI で依頼を処理</text>
+  <path d="M 635 249 V 368" class="edge"/>
+  <text x="650" y="271" class="label">VPC に接続</text>
+
+  <rect x="500" y="372" width="269" height="63" rx="8" class="private"/>
+  <text x="516" y="398" class="name">Lambda の接続口</text>
+  <text x="516" y="421" class="detail">ネットワークインターフェイス</text>
+  <path d="M 500 404 H 339" class="edge"/>
+  <text x="408" y="390" class="label" text-anchor="middle">TCP 5432</text>
+  <text x="408" y="429" class="detail" text-anchor="middle">依頼を読み書き</text>
+  <rect x="78" y="372" width="257" height="70" rx="8" class="private"/>
+  <image x="90" y="385" width="44" height="44" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAQKADAAQAAAABAAAAQAAAAABGUUKwAAAIyUlEQVRoBe1Ze2wb9R0/++y789tO7LwT52EnTdIWrRsvDU0DjSHtj2ms6xBjdICArQgmhFZtaNXYEBLaBtLGUAtMBYbYpG3QsVUa20CCCYk9eBToI22al52H09iN7dg+P86+2+d8jnvx685Os6qST6fkd3ff7/f3fT9+1vzH+zFxOV/ay5l5kfemAJfagk0LNC2wSQ00XWiTCtw0etMCm1bhJgk0LVCPAsdf8Vw1udO8y1gPkgLsZW8Bzf+nGx0/4jWNGwhNXp2C+Hfim9Ox9xIK6lXxWacC5mKAgHWJexCTFsXHzZGvzwIGD2P+lNE4aqB79DqrTmcnSRups5A5ls9Gc7loNhvJZc5x7OlU4hM2fpwl+HXu8q46/kePaYdx4tbp2LHEhU/rII39V2UBqk3fdltr65ftdDdVcRsdRUIYgtjwFcKE/xFdfimUnEwV2M07jyAIF4t7MKNsgfbbnb37O7SMqEMulF37d5w9mUxOpzOBDLea5ZMCn+a1eo2G0UIGulNPu2m4u+UqM+POyyMQ514O+X8aEDKChhT9RuAFIi9JRV3U+1JBgPbbWt2PdIOoqMsXQ7EPEur3hr+1faO17ZYWjV4T+lN45vvz9TKnBl4hjXbc7QKV6e/5z97vi71fB/fASk6lfI8untwzxad451ccOkctdx1+pv/KUzvsn7eqYVoOoyCA5PQ8WwxGOa6qNbgXgK0h6G59DQSNToO7gQm3llaK+3mf7g/9OQwXYieSxZeKC6pL33Zra8dep9ZQS03Dvx6wXWsWuScI79NuxPfUg77wm2uK9CUAVQIg7Jw3O3Cn5zPRd+PsCTY5gyDmuPNZKFiKCi2t0dl1lBTEYwbr1SZkWynlC7lC+FbkSdQ9VSgKkhiEpo4aoUqAT248g3B0ftVB91IISgK37BI4Qdy4bFMUBzH0DwcHf9YrClPlmrx3VqMlvIf6bddZph7wRd5e47k6kpQqATLL3PzPA/NPBIzDjPVas8HLMG4awpAWLdwDSQZG4JN8Ls6nFzNpXxr2if03Ef+YFbK1WAEuUjDkF4HyUQbW+XQtlHIlqBKggCYQ7JkU7hIqcAAwoT69SuikSXvF26PIbGf3zeHN5H1zqBKoFSXEFR/rEaAKsQZ2BSXjmEFnI63XmCWqIFK3DvKYtfJDFYYvzms4IQjBDvrWTSnxkglgv94iacJ+Q93FS67CLRcAiZVqLy1heqfOfn2Bb9fXNuQ0OXNq1qoEGP3tkO2z5nrLJFy88x7XjqPDupZSJ+l5qAOZN/LWGhfMoj93fNGmhteKMKWkKwJhih15YTC7mg2/FYsfS6DJSU6lc2u5EmDUMn2b3jRmMG43mK8wWq40Se2nmCJlirJebXbtbkEF9D26ZL3GNPB4r/tAF5rccoIl9Cs+qhJg4RfLzptb0B67djtwS4SQ45H4c4kccihpJnVWslhQiwCrf40EDocGHusuFjK6j/I81Yeqt3RoBUUjeCTj2tNi3mVCE3HmrtnadaNxAQLPBrGfcYRBl2/ZZWT6afAhMm2X5pgCZbQM6QUOhYydTEGjGHlR3eS7ovaNHB5EW7r6t+jSMyviJ4FAnzv+ihf5dOjJvun9/nqTssI8gFMQ7PLe6HEwJ2cFa2RArTFfiXUaMIqOFQYpB5MgCVID1/L8sg/cxz9iT++dEZuo9QsFfvR3Q6SVjH/Inn1gDoGx/kX5v8w3lYE3QOQSPHZK+zOpfGOHmbgi98BBr9G7v3Pbi3nd/z16+lsbuAcALIaxIeXLINh2vj6CKaoQPBs2rPzQuAUq01t/ixGU6afgbMgwjhttiG/4xuKhlaWD56o1HchaCGjHF8T0ygW50GsR+GHan075M9VQALklAmAM2n7UiyBZF4cIvxH1Px5IL2SKb6otkK/7DnQbhsQ6LV3xY+ypW6bWn0r/q3Kh3h90lmSYUjIbn3NJPrPEydVG99LVTjTkqPAcGE3eXCAvpXxpOUzJWpUFgAN3D766GjoSTs3VIidRR3xTnRT0zfRRjpts4iCRP485/5fI7IEFefjKuQHrSKaGYQYvcXoQejW89q84OvlqoSXhqhIgcSJp2l6YSDCFJY6z7KkUF+KyMT4XzfEZHkUAHoxDLrqTQiCCCRwKfXTdhLQ39Nq+19n93XYIBlKT30ae4eSsY4006vmVG0SgoLkfL669Gy8BqPaoSgCkUZRVKBJDE9qYarSK72F3MDr9kF/u9HQPhfEXzo2Xp/ZMQRFFePg9PqG5OH80MvPwfF2lQJkbaRskBNyooEaMYx4GfFBdqGVa0ihOZPlzxRy0LtrnBItzRflgte2lQQxxZ+6cQSyOPDcAE3kP9k/cPi0xClKep9zgPvBcEENfUSqVC7UCFMhhKJtM4VZJXQKDYyAuwSK6ncnvzI79wYMGzv1w19xPFpEbMA2TFjL0WrgB7kFfVRaqi93awLDS2ft8aJ9w4mLcxnTc4UTsQiOzP1yojVjtq4IAYjYkCARANXzF93qXeFoKMBzDSMBoZgOHg1DdwGM9XfvakW3nfrQoTtUNXQoCBI+sgqz3oNv19Rb15b3Iie1zlrHfDyFOIv+MyaM28OwK2ifTTiPyUvSdWPzDxn/pIO9p3Vfcr3wRf59l+mgc6jtusKKJhyvjIERkpXQWuIAKOdGcOXc7+h/p6bzLhQyL7m3qQb+8M4W+4TlSj73w5DKmiwv4da4U0qhEreVL9u7723DaLD0iS+LkB6d03Aon9qEpAbGIQx6Ih1zJDNJQuQSJ8rf8fHD5N6HyRh+/Ngw90QewDz5zsrFRRtpCVRbCXLL6esTyaRM6M/Fgy0NDx7glEuV/0aLiwAf9T+SdWLWkDvmBKObfssmunGCNN6oEEPEFAjyJJ+zIXAYt00th0tU5SPT3cBLxJ6bVbDac5cK5zGIGbNXYUvqUwK8k+blHEbI2gCoXqk3i0n5VyEKXljk1uzcFUKOlrYRpWmArtauGdtMCarS0lTBNC2yldtXQblpAjZa2EuZ/taPBbn8lyqYAAAAASUVORK5CYII="/>
+  <text x="141" y="402" class="name" style="font-size:19px">Aurora PostgreSQL</text>
+  <text x="141" y="427" class="detail">修理依頼を保存</text>
+
+  <path d="M 635 435 V 480" class="edge"/>
+  <text x="649" y="464" class="label">HTTPS 443</text>
+  <rect x="500" y="484" width="269" height="44" rx="8" class="private"/>
+  <text x="516" y="514" class="name">VPC エンドポイント</text>
+  <path d="M 635 528 V 582" class="edge"/>
+  <rect x="500" y="586" width="279" height="55" rx="9" class="service"/>
+  <image x="511" y="594" width="39" height="39" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAQKADAAQAAAABAAAAQAAAAABGUUKwAAAIkElEQVRoBe1ZCWwUVRjemW736rbbk7agKOVSUKBSLEdE5IioBRICingQRBEEU5TIpWKMVqMEQTkqnggoVBAVEDAioOFqPIoCgiDI2VJ6wLbd+xi/6Wtnd2d2Zt6wNEbTl037v/99//Xu9w9zMq9A918u7H/Zed731gD+7RFsHYHWEYixB1qnUIwdGLP4/30EGEN82szJcSm2q+upnJ8243d1spRSKiOQ+vRE27gR2cVF2mJgWX1muqnnzcQJEKjqWBVblB6LYIzyXQh+Z7/7miGnvffkmYqpzwcu20XyoSrDmHp1t/TLNd/ey3BTRyYuLtTUSHGBgPfYSVfpQeeBMvfBIzqOEwGEKhOv53x+oapMqAQAYdUYWIvJWjDU9kBBfPt2TcaCnL+m1l9+iQyC+7ej+rZt9OmpOoYhAN/ZC/aSLQ1bdgSdbpF/cbbE7OWv1m/eYV9HNffUA+BjSLVlF0cfB+s9d6XNmAQAYP7ySsfOfc7SMnfZEc7jBYcsgFN9RoBmjAZTbndLfm7CkAH67DbgBGrtNYs+aNi+GzQpxHtDlxzf6fPnHyrkvLwS5UIVAFREHYeM+YWJI4aiFX1sX7PR8WOpLhgxMcIDCPnBMgkD822PjDb14BdJ/abvql55hzfR2Pe892culD85N1BzOSQiT9EGwBuQrAd4kPnGnJolKxu27pI3IduSeN/g1OkTKme97j507Oq8h2oNAUSNgdHrOT/tgpOGQsSv2nso1La1YReqmDLPe+qsoeMNZG+NxXuYh3gs3kODthEgXaiwpgmAMZuSx4+yDOoX374tTPjOnMfitq/9mqxsghH+8gEUFzEGA/28F2RBaAsg4/np9vVbvcdPKcSQMLh/2swn9G3Sw82A9l+sqnnrA8eufSI+qohBp9dj1WIF28beW1W0VIqR48QVtu0i1ybiJxYMSZnysGVAnr1kM+d0O3buBY25ZOnfu2Hbbs7nA942flTGi4VsggX7UvWCFTWLP7R/+pXn4BHsm0Bah90RrG/wHD4u0oyR4VxuHNXtVi405/XAduw98bcII1elDYC1JmQtms+ajNVvFHtPnIY6zuUhMbh/OeTYfQAc4y1dM1+bhdMKu3t10VLshpzThR+I+k04s1yWvrn4Off/GqiqieIQx+FkwACaenar37id9EgUWCSLdhEnjhwal5zkLjvcsP0HQQPslT/2HHqacFImjkUv2td8af/sawHTRHAczy/ZDEDyxPvFrc11HGo4BLFfJ44a1sxT+U8XAMsk3c+nj66s2ijSF3Q4BQ7uQjxmtRgjAOo+/wa0OZeHyZUrq79AE2+Obbp3yCEJnyoAc17P+HZZvnPlzr0/K6hjk6xoDdRekcPgCoQmApPDOPf87DtXAXPm3j3kMOF8ugD65kLG8f1ehStkuNKYaI5zfL8HGsz9bqPRQxWAJb8XdLkOlNFojB1DDBGjqtrUA8CjzNC5A45M9+9HVdVdEwAM4fFg6NQBDwNVhRQIPKYYxl9ZrfDIyFr8Es4EYozmDQkMltPFGS9H9Q+GApXV+raZ+swM3/mKqBiBqT4C+iz+7o7XiSAjJQTvpU1yHGURX3klBPXZGXLiAl/lKiHtTvI6EeQJEf3ej4uK0QCA9AokhweY0qLggPoUEqCaCLyJ0+dOsxYMhlTDlp3Vry/DtNakgRKsEgD629ynJx6prp9+q3jqBUqlgCU9OBKnKXEahPf0OZzE4Es7WKSTjHD28iJznx6wCLsigKiqvgZwi4QMecWKhBWquJOhterlt/EDQaoKeFETmf3+i0oLj4iojABA2H9wfmFDwKygnwa4UUKWvx01FlIFSTpYeRzwTNNnZcAob1qtqI8AUgN4gmFLNt7aVU1bqP3yhyWew3/Gd7geP8+R46iG2tQoGEIMyERxXv6KrlzUA4A8slH4a87nLxSUBa+T8slzCLj8idlCigF9r9z9EEFqDH+JUVVzdAE0XiKsQwaoqgsHCAefQIS3ytIMQwxdywCQq8J0xGQwN16KZG1TNGANkGUgh4UJGMLOAaNymHA+1QjogsG69fxVPvnh0eHCqrSqu1INxETdhq0wKm2VctR3ISJT9+W3yRPGmPvmJgzq59i9X6oIHNXJHVWKz1o3+5pwV3+MQLDeAXPRwRIu3QjodMG6+tpln0A87dnHeZORRfmhE4ltqhERvICvW72IpFahNu2ZSWiuXboS5qJKSZkqd6EIAZbJLJplX7cJGQckQrA08U6PAGitsCy8RyoF23TF1Hl4YSObbRs3snLem/QvJy0BNPtHcmlBj/fi9PkxxhDKLyGGKfOUvj80Wxf9F08GUbO0SrxHt8UlJSIDJwVo4qDX0fd8rjKnPb6kIB+hSRxgbQEI3ocy4HS5A1m3WCYiBq3fsjQFIPXeeFPH6zessAzMl/VPsSHhznyIG7vmhGJozhkrykU00mbmeO+Li0RfH9IKJ5l732K9eyBycoFqfFPiL3DhBRtryuTxl99fG84Ejctp+uypKZPGQS1rMTt27RfyfHyuckAeMiCc2yOSilqlWsR4WLX7aIHIe14dEl6j70md9igSj6h5/zrt2LHHWXrQ88cJsrWTk6Hp6GVZY7fOSC3iE5Oh043ABxsctctW1W3cJnzXCa1p1W+KkG8sVAEAmfL4OOvwQVEz4Eg5Jo4ebhtzX1xGKlGKzvNXXPJVXELeFxznvl/is9vgRcGYjAQQqKq1b/gGCdDAlTrCEf5qjYE2ABjAnsPnkGUKLsBIRaGDcWmNv6H5c2UkGEvfVVqGz6yu/b8qfBnRFIOGACKdUaphWuNFgi5HugU4pE8wILif0R8aQgz42Fqz8D0FYy0SgGAvYg0IXDoCMSRPfKB2ycfKz5qWDYDO1ZhQ2g6ymEy1jHBrAC3Tr/RaW0eAvq9aBtk6Ai3Tr/RaW0eAvq9aBvkP/Vb8Nru54t8AAAAASUVORK5CYII="/>
+  <text x="560" y="611" class="name">Secrets Manager</text>
+  <text x="560" y="633" class="detail">DB の認証情報を保管</text>
+</svg>

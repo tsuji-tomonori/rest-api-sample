@@ -1,5 +1,9 @@
 # 修理依頼 API のデプロイ
 
+この手順では、修理依頼の受付、処理、台帳を AWS に配置します。初めてクラウドにアプリを置く場合は、まず[クラウドの意味と修理依頼の構成図](../../docs/implementation/architecture.md)で、API Gateway、Lambda、Aurora がどこを受け持つかを確認してください。
+
+手元から構築する場合も、GitHub から自動配信する場合も、先に AWS 側の環境を用意し、DB にテーブルを作ってから、公開 URL で一覧を取得します。各サービスをつなぐ設定は [AWS 構築ガイド](../../docs/build/aws.md)にあります。
+
 ## 配置前にセキュリティと費用を確認する
 
 CI は Python の依存監査に加え、CDK のビルド対象から作った Lambda イメージも Trivy で検査します。Amazon Linux の更新では [公式リリースノート](https://docs.aws.amazon.com/linux/al2023/release-notes/)で修正版を確認し、`Dockerfile` の `AL2023_RELEASE` を更新します。ファイルの変更が CDK のイメージ資産にも反映されます。ローカルでの業務テストには Compose の `local` ステージを使います。配布イメージからはローカル専用 Lambda エミュレーターを除いています。
@@ -19,8 +23,6 @@ uv run --locked --group infra python -m pytest -q tests/infra
 | セキュリティ | cdk-nag の AWS Solutions ルールを適用し、新しい指摘を CI で検出する。教材用に残した指摘は、理由と対象を[例外一覧](../../tests/infra/nag-exceptions.yaml)で確認できる |
 
 アサーションは守りたい条件を確かめます。スナップショットは、IAM ポリシーやネットワークを含むテンプレート全体の変更に気付くために使います。意図した構成変更では、手元で環境変数 `UPDATE_CDK_SNAPSHOT=1` を設定してテストを実行し、解除してから再実行します。PR では YAML の差分と費用・権限への影響を一緒に確認します。[検査コード](../../tests/infra/test_stack.py)・[CDK 公式のテスト手法](https://docs.aws.amazon.com/cdk/v2/guide/testing.html)・[cdk-nag](https://github.com/cdklabs/cdk-nag)・[PrivateLink の料金](https://aws.amazon.com/privatelink/pricing/)
-
-修理依頼を受け付ける API Gateway、Lambda、Aurora を AWS に配置します。手元から構築するときは「スタックを作成する」から、GitHub から自動配信するときは「GitHub Actions から継続的にデプロイする」から読みます。どちらも、スタックを適用し、DB を移行してから、公開 URL で一覧を取得する流れです。[構成と接続設定](../../docs/build/aws.md)
 
 ## スタックを作成する
 

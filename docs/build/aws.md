@@ -1,23 +1,21 @@
 # API Gateway、Lambda、Aurora をつなぐ
 
-修理依頼を受け付ける FastAPI ができました。次は、社員が同じ台帳を使えるように、API とデータベースを AWS に配置します。登録先のパスとレスポンスはローカル環境と同じです。ここで用意するのは、利用者が API を呼ぶ入口、アプリがデータを保存する経路、台帳を更新する手順です。
+複数の端末から同じ修理台帳を使うには、共通の受付と、後で受付番号を指定して依頼を読める保存先が要ります。アプリの実行やデータの保存に必要な機能を、ネットワーク経由で必要なときに利用する仕組みが**クラウド**です。ここでは Amazon が提供するクラウド **AWS（Amazon Web Services）** に修理依頼 API を置きます。
 
-## 登録ボタンから台帳まで
+## 一件の修理依頼はどこへ届くか
 
-`POST /repair-requests` を受け取る入口が **Amazon API Gateway** です。権限の確認を通ると、**AWS Lambda** がリクエストを受けて Python の関数を実行します。関数は **Amazon Aurora PostgreSQL** に件名と場所を保存し、受付番号を返します。
+**Amazon API Gateway** は、API の公開 URL でリクエストを受け、設定した処理先に渡すサービスです。このサンプルでは、件名と場所を添えた `POST /repair-requests` が届くと、呼び出しを許可した相手かを確認してから **AWS Lambda** に渡します。Lambda は呼び出しに応じてコードを実行するサービスです。ここで、Python のフレームワーク **FastAPI** で書いた登録処理が動きます。
 
-```mermaid
-flowchart TD
-  Client["署名できるクライアント"] --> Gateway["API Gateway"]
-  Gateway --> API["Lambda で動く FastAPI"]
-  API -->|"依頼を保存・照会"| DB[("Aurora PostgreSQL")]
-  API -->|"接続情報を読む"| Secrets["Secrets Manager"]
-  Operator["デプロイ担当"] --> Migration["移行用 Lambda"]
-  Migration -->|"テーブルを用意"| DB
-  Migration -->|"管理用の接続情報を読む"| Secrets
-```
+依頼の保存先は、PostgreSQL と互換性のあるデータベース **Amazon Aurora PostgreSQL** です。保存が済むと、アプリは `201 Created` と取得先を示す `Location` を返します。たとえば取得先が `/repair-requests/42` なら、そこに署名付きの `GET` を送ると同じ依頼を開けます。公開 URL から保存先までのつながりを一枚でたどれます。[修理依頼 API の AWS 構成図](../implementation/architecture.md)
 
-登録が済むと `201 Created` と `Location` が返ります。続けてそのパスに署名付きの `GET` を送れば、今登録した依頼を開けます。
+## 構築時と受付時で使う関数を分ける
+
+アプリを実行できるように環境へ配置する作業を**デプロイ**と呼びます。ここでは **AWS CDK** を使い、必要なサービスと接続先を Python で定義します。用意する Lambda 関数は二つです。テーブルを準備する処理と、日々の依頼を登録する処理には、それぞれ異なる権限を与えます。
+
+| いつ、誰が呼ぶか | 実行する Python の関数 | Aurora に対して行うこと |
+| --- | --- | --- |
+| デプロイ後に担当者か自動配信が呼ぶ | 移行用 Lambda の `package.db.migrate.handler` | 管理用の DB ユーザーで必要なテーブル変更を適用し、API 用の DB ユーザーに権限を与える |
+| 稼働中に API Gateway が呼ぶ | API 用 Lambda の `package.app.main.handler` | API 用の DB ユーザーで依頼を保存・照会する |
 
 ## API Gateway と Lambda をつなぐ
 
@@ -43,11 +41,11 @@ default_integration=integrations.HttpLambdaIntegration("FastAPI", api_handler),
 
 | 必要な設定 | このサンプルでの役割 |
 | --- | --- |
-| 通信経路 | Lambda と Aurora を同じ VPC（仮想ネットワーク）の隔離サブネットに置く。Aurora のセキュリティグループで、Lambda からの TCP 5432 を許す |
+| 通信経路 | Lambda と Aurora に同じ VPC（仮想ネットワーク）の隔離サブネットを指定する。Aurora のセキュリティグループ（通信の許可規則）で、Lambda からの PostgreSQL 接続（TCP 5432）を許す |
 | 接続情報 | Lambda は VPC エンドポイント経由で Secrets Manager に接続する。TCP 443 の通信と、API 用シークレットを読む IAM 権限を与える |
 | DB の接続先と権限 | `DB_HOST` と `DB_NAME` で接続先を指定する。`sslmode=verify-full` で証明書とホスト名を確認し、`repair_api` に許可した範囲でテーブルを読み書きする |
 
-データベースを作っただけでは、修理依頼を入れるテーブルはまだありません。デプロイ後に移行用 Lambda を呼ぶと、Alembic が未適用のテーブル変更を行い、続いて移行用 Lambda が API 用の DB ユーザーに権限を与えます。日々の登録と照会に使う DB ユーザーには、データを読み書きするための権限だけを与えます。
+接続先ができたら、移行用 Lambda がテーブルを準備します。初回は Alembic（テーブル定義の変更を管理するツール）が修理依頼のテーブルを作り、次回からは未適用の変更だけを反映します。
 
 ## 構成を確かめ、台帳を使える状態にする
 
@@ -74,6 +72,7 @@ CD はデプロイ先を設定すると実行されます。署名付きの一�
 
 ## 根拠と参考
 
+- **サービスの役割**　[クラウドとは](https://aws.amazon.com/jp/what-is-cloud-computing/)・[Amazon API Gateway とは](https://docs.aws.amazon.com/ja_jp/apigateway/latest/developerguide/welcome.html)・[AWS Lambda とは](https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/welcome.html)・[Amazon Aurora とは](https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html)
 - **入口と認可**　[AWS の IAM 認可](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-access-control-iam.html)・[JWT オーソライザー](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html)・[HTTP API の CORS 設定](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html)
 - **関数へ渡す方法**　[Lambda プロキシ統合とイベント形式](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)・[API Gateway が Lambda を呼ぶ許可](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html#services-apigateway-permissions)
 - **保存先への接続**　[Lambda の VPC 接続](https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html)・[Secrets Manager の VPC 接続](https://docs.aws.amazon.com/secretsmanager/latest/userguide/vpc-endpoint-overview.html)・[Aurora の TLS](https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraUserGuide/AuroraPostgreSQL.Security.html)

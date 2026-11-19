@@ -1,12 +1,24 @@
 # 実装編 01　リクエストを受ける入口を作る
 
-修理依頼の一覧を開くと、画面は `GET /repair-requests` を送ります。どの環境でも、このリクエストを受け取って一覧を返すのは同じ FastAPI アプリです。環境ごとに用意するのは、HTTP の入口と台帳の接続先です。
+修理依頼の一覧を開くと、画面は「台帳にある依頼を見せてほしい」とリクエストを送ります。これが `GET /repair-requests` です。複数の人が同じ台帳を見られるように、どこでこのリクエストを受け、どこから依頼を読み出すのでしょうか。
+
+サンプルの公開先は **Amazon Web Services（AWS）** です。アプリを動かすコンピューターやデータの保存先を、必要に応じてネットワーク越しに使う仕組みをクラウドと呼びます。AWS はこうしたサービスを提供しており、このサンプルでは次の順に使います。
+
+1. **Amazon API Gateway が受け付ける。** 画面が呼ぶ URL の入口です。このサンプルでは「HTTP API」という種類の入口を作り、呼び出す権限を確かめてからリクエストを渡します。
+2. **AWS Lambda がアプリを動かす。** Lambda は、呼び出しを受けてコードを実行するサービスです。その中で動く Python アプリが、メソッドとパスを見て一覧取得の関数を選びます。この振り分けを書くために使うのが FastAPI です。
+3. **Amazon Aurora から台帳を読む。** Aurora はデータを表に保存するデータベースです。一覧取得の関数が保存済みの依頼を読み出します。結果が API Gateway を通って画面に返ると、一覧を表示できます。
+
+公開後にリクエストが通る経路は、[修理依頼 API の構成図](architecture.md)でたどれます。
+
+## 手元で動かすと何が変わるか
+
+手元でも同じ FastAPI アプリを使います。入口を Uvicorn というプログラムで起動し、台帳にはデータを一つのファイルに保存できる SQLite を使います。
 
 | 設計した役割 | 手元で動かすとき | AWS に配置したとき |
 | --- | --- | --- |
-| HTTP リクエストを受ける | Uvicorn が端末のポート 8000 で受信する | API Gateway の HTTP API が受信し、IAM で署名と呼び出し権限を確かめる |
-| メソッドとパスから処理を選ぶ | Uvicorn がリクエストを渡し、FastAPI がメソッドとパスに対応する関数を選ぶ | Lambda が `handler` を実行する。Mangum がイベントを渡し、手元と同じ FastAPI が関数を選ぶ。戻り値は Mangum が Gateway 用のレスポンスに変換する |
-| 依頼を保存して読み直す | SQLite の `repairs.db` を使う | 同じ Python の保存処理が Aurora PostgreSQL に接続する |
+| HTTP リクエストを受ける | Uvicorn が端末のポート 8000 で受信する | API Gateway が公開 URL で受信する |
+| メソッドとパスから処理を選ぶ | Uvicorn が渡したリクエストを FastAPI が振り分ける | Lambda の中で同じ FastAPI が振り分ける |
+| 依頼を保存して読み直す | SQLite の `repairs.db` を使う | Aurora の PostgreSQL 互換データベースを使う |
 
 ## 手元で一覧を開く
 
@@ -28,13 +40,13 @@ curl -i "http://127.0.0.1:8000/repair-requests?limit=1"
 
 ## AWS では同じアプリをどう呼ぶか
 
-`main.py` の末尾で、同じ `app` を使って Lambda の入口を一つ作ります。
+`main.py` の末尾で、Lambda から呼び出す関数 `handler` を用意します。Mangum は API Gateway から届いたデータを FastAPI の `app` に渡し、その結果を API Gateway に返せる形式に変換します。
 
 ```python
 handler = Mangum(app, lifespan="off")
 ```
 
-CDK の次の箇所で、API Gateway から API 用 Lambda に処理を渡します。`api_handler` は、上の `package.app.main.handler` を起動するよう設定した Lambda です。
+AWS の構成を Python で定義するツールが AWS CDK です。次の設定で、API Gateway の入口と、そこから呼ぶ Lambda を結びます。`api_handler` は、上の `package.app.main.handler` を実行する Lambda です。
 
 ```python
 gateway = apigw.HttpApi(
@@ -44,7 +56,7 @@ gateway = apigw.HttpApi(
 )
 ```
 
-この構成では、FastAPI に業務用のパスを追加すると、Gateway の既定ルートから同じ Lambda に届きます。AWS の公開 URL に送るときは署名が必要です。DB への通信経路と権限は [AWS の構築ガイド](../build/aws.md)で確認できます。
+`default_authorizer` は、AWS の権限管理の仕組み（IAM）で署名と呼び出し権限を確かめる設定です。`default_integration` は既定の送り先を決めます。FastAPI に業務用のパスを追加すると、そのパスのリクエストも同じ Lambda に届きます。DB への通信経路と権限は [AWS の構築ガイド](../build/aws.md)で確認できます。
 
 [FastAPI の入口](../../package/app/main.py)・[CDK の接続設定](../../package/infra/app.py)・[AWS 公式の HTTP API と Lambda の統合](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
 
