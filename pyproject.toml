@@ -30,7 +30,7 @@ contract = [
     "schemathesis==4.33.4",
 ]
 infra = [
-    "aws-cdk-lib==2.253.0",
+    "aws-cdk-lib==2.277.0",
     "cdk-nag>=2.35,<3",
     "constructs>=10,<11",
 ]
