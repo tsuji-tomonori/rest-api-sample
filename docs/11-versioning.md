@@ -40,7 +40,7 @@ URL を決めるときは、**利用者が選ぶ契約**と、**運用担当者�
 
 **現在のサンプルは1行目**です。CDK が一つの HTTP API と自動デプロイを有効にした `$default` ステージを作り、FastAPI が `/repair-requests` を公開します。ステージの自動デプロイは、Gateway 設定への変更をそのステージに反映する機能です。[サンプルの CDK](../package/infra/app.py)・[使用中の CDK の既定値](https://github.com/aws/aws-cdk/blob/v2.220.0/packages/aws-cdk-lib/aws-apigatewayv2/lib/http/api.ts)
 
-生成される OpenAPI の `openapi: 3.1.0` は仕様書の書式、`info.version: 1.0.0` はその文書の版です。`FastAPI(version="1.1.0")` と更新したときに変わるのは文書に載る番号です。新しい公開パスを作るには、ルートか API マッピングを設定します。[サンプルの OpenAPI 定義](openapi.json)・[OpenAPI の Info Object](https://spec.openapis.org/oas/v3.1.1.html#info-object)
+生成される OpenAPI の `openapi: 3.1.0` は仕様書の書式、`info.version: 1.0.0` はその文書の版です。`FastAPI(version="1.1.0")` と更新したときに変わるのは文書に載る番号です。新しい公開パスを作るには、ルートか API マッピングを設定します。[サンプルの OpenAPI 定義（YAML）](openapi.yaml)・[OpenAPI の Info Object](https://spec.openapis.org/oas/v3.1.1.html#info-object)
 
 ## 互換性を保てる場合は、同じ URL を更新する
 
@@ -49,7 +49,7 @@ URL を決めるときは、**利用者が選ぶ契約**と、**運用担当者�
 サンプルでこの変更をリリースする場合は、FastAPI に公開版 `1.1.0` を記録し、リポジトリのルートで次を実行します。生成した差分を読み、旧版のテストを通してから、検証環境、本番環境の順に反映します。現在の CI の `--check` が確かめるのは、コードと保存済みの OpenAPI が一致することです。過去の利用者がそのまま動くかは、残しておいた要求と応答で確かめます。[アプリの実装・テスト方針](../package/app/README.md)
 
 ```console
-uv run --locked python -m package.app.export_openapi docs/openapi.json
+uv run --locked python -m package.app.export_openapi docs/openapi.yaml docs/openapi.json
 ```
 
 ## 互換性を保てない場合は、旧版と新版を並行稼働させる

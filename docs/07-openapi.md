@@ -12,7 +12,7 @@
 
 ## 登録と照会の設計書を書いてみる
 
-次は、そのまま一つの YAML ファイルとして読める記述例です。最初は `paths` の下で「登録した」「見つかった」「見つからなかった」の3か所をたどってみてください。本文の型は末尾の `components.schemas` に置き、各操作から `$ref` で参照しています。この手書き例では登録と照会に絞ります。[全5操作の設計書（JSON）](openapi.json)
+次は、そのまま一つの YAML ファイルとして読める記述例です。最初は `paths` の下で「登録した」「見つかった」「見つからなかった」の3か所をたどってみてください。本文の型は末尾の `components.schemas` に置き、各操作から `$ref` で参照しています。この手書き例では登録と照会に絞ります。[全5操作の設計書（YAML）](openapi.yaml)
 
 ```yaml
 openapi: 3.1.0
@@ -101,18 +101,22 @@ components:
 
 ## 実装から同じ設計書を取り出す
 
-サンプルでは Python の型と FastAPI のルート定義から [openapi.json](openapi.json) を生成しています。ファイルの `openapi: 3.1.0` は設計書を読むための規格の版です。`info.version: 1.0.0` はこの設計書に付けた版で、FastAPI の `version` に設定しています。どちらの値もリクエストのパスを変えません。[OpenAPI の OpenAPI Object](https://spec.openapis.org/oas/v3.1.1.html#openapi-object)・[Info Object](https://spec.openapis.org/oas/v3.1.1.html#info-object)・[FastAPI のメタデータ](https://fastapi.tiangolo.com/tutorial/metadata/)
+サンプルでは Python の型と FastAPI のルート定義から、同じ設計書を [YAML](openapi.yaml) と [JSON](openapi.json) で生成しています。`openapi: 3.1.0` は設計書を読むための規格の版です。`info.version: 1.0.0` はこの設計書に付けた版で、FastAPI の `version` に設定しています。どちらの値もリクエストのパスを変えません。[OpenAPI の OpenAPI Object](https://spec.openapis.org/oas/v3.1.1.html#openapi-object)・[Info Object](https://spec.openapis.org/oas/v3.1.1.html#info-object)・[FastAPI のメタデータ](https://fastapi.tiangolo.com/tutorial/metadata/)
 
 公開後に設計書を更新するときは、変更前の定義と比べます。たとえば登録の必須項目が一つ増えると、これまで件名と場所だけを送っていた画面からは登録できなくなります。このような変更をどう公開するかは、第11章で判断します。[第11章　API のバージョンを上げる](11-versioning.md)
 
 uv を使い、リポジトリのルートで次のコマンドを実行します。上の行は仕様書を更新し、下の行は保存済みの内容と実装が一致するかを確認します。どちらも `app.openapi()` を呼ぶので、Web サーバーの起動や DB 接続は不要です。[生成コマンドの実装](../package/app/export_openapi.py)・[FastAPI の OpenAPI 生成](https://fastapi.tiangolo.com/how-to/extending-openapi/)
 
 ```console
-uv run --locked python -m package.app.export_openapi docs/openapi.json
-uv run --locked python -m package.app.export_openapi --check docs/openapi.json
+uv run --locked python -m package.app.export_openapi docs/openapi.yaml docs/openapi.json
+uv run --locked python -m package.app.export_openapi --check docs/openapi.yaml docs/openapi.json
 ```
 
-自動出力に含まれるのは FastAPI に宣言した仕様です。たとえば `201` に `Location` が付くことは定義から読めます。その値で本当に依頼を開けるかはテストで確かめます。また、AWS で API Gateway が行う署名・権限の確認は、この JSON の外で設定します。[API のテスト](../tests/test_api.py)・[AWS での構成例](09-aws.md)
+## 入力例を送り、期待した応答と比べる
+
+登録の入力例は、FastAPI の `Body(openapi_examples=...)` に名前を付けて書きます。[全5操作の YAML](openapi.yaml) で `office-chair` を探してみてください。`value` が送る本文です。この教材では、同じ例の `x-expected-status` に期待する `201`、`x-expected-fields` に照合したい応答の項目を記録します。空白だけの件名など、エラーを試す入力は操作の `x-negative-examples` にまとめています。`examples` は OpenAPI の標準項目で、`x-` で始まるこれらの名前と意味は教材で決めたものです。[FastAPI の入力例](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter)・[OpenAPI の Example Object](https://spec.openapis.org/oas/v3.1.1.html#example-object)・[Specification Extensions](https://spec.openapis.org/oas/v3.1.1.html#specification-extensions)
+
+契約テストは、保存した YAML から各例を読み、起動中の API に本文を送ります。たとえば空白だけの件名なら `422`、通常の登録なら `201` を期待します。成功時は応答の項目を照合し、`Location` が示す先で同じ依頼を読み出せることも確かめます。AWS の署名と権限は API Gateway が確認するため、デプロイ後に別途検証します。[契約テスト](../tests/contract/check.py)・[AWS での構成例](09-aws.md)
 
 手元の API を起動すると、`/openapi.json` でその実行中の契約を取得できます。`/docs` を開くと、ブラウザーで各操作の入力欄と応答例を見ながらリクエストを送れます。次の章では、実際に依頼を登録して `201` と `Location` が返るところを確かめます。[FastAPI の Docs URLs](https://fastapi.tiangolo.com/tutorial/metadata/#docs-urls)
 

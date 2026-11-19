@@ -9,7 +9,7 @@
 | 設計で決めたこと | コードでの表し方 |
 | --- | --- |
 | 登録先は `POST /repair-requests` | `@app.post` の最初の引数に `"/repair-requests"` を指定する |
-| 本文には件名と場所を受け取る | 関数の引数を `data: NewRepair` とする。`NewRepair` が二つの項目と検証条件を定める |
+| 本文には件名と場所を受け取る | 引数 `data` の型 `NewRepair` で二つの項目と検証条件を定め、`Body(openapi_examples=...)` で実際に送る例を添える |
 | 登録が済んだら番号と状態を含む JSON を返す | デコレーターに `status_code=201` と `response_model=Repair` を書く。`Repair` が返す項目と型を定める |
 | 新しい依頼を開けるようにする | デコレーターの `responses` に `Location` を記載し、関数の中で採番後の宛先をヘッダーに設定する |
 
@@ -29,7 +29,7 @@ return repair
 
 ## パス、クエリ、本文を読み分ける
 
-同じ Python 関数の引数でも、値が来る場所は異なります。たとえば、パスに `{request_id}` があり、関数にも同じ名前の `request_id: RepairId` があれば、それがパスに埋め込んだ受付番号です。一覧取得の `limit: Annotated[int, Query(ge=1, le=100)] = 20` はクエリから整数を受け取り、範囲は1〜100、省略時は20と伝えます。登録の `data: NewRepair` は、Pydantic という入力検証ライブラリのモデルなので、JSON 本文を読み取ります。パスの名前と型の指定を追えば、一つの要求をコードのどこで受け取るかが分かります。[FastAPI「Request body + path + query parameters」](https://fastapi.tiangolo.com/tutorial/body/#request-body-path-query-parameters)
+同じ Python 関数の引数でも、値が来る場所は異なります。パスに `{request_id}` があり、関数にも同じ名前の `request_id: RepairId` があれば、それがパスに埋め込んだ受付番号です。一覧の `limit` には `Query(ge=1, le=100, …)` を指定し、クエリから1〜100の整数を受け取ります。省略時は20です。登録では、JSON 本文を `NewRepair` の条件で検証した結果が `data` に渡ります。[FastAPI「Request body + path + query parameters」](https://fastapi.tiangolo.com/tutorial/body/#request-body-path-query-parameters)
 
 ## 仕様書に載ることと、動作で確かめること
 
@@ -43,14 +43,14 @@ uv run --locked python -m package.db.migrate
 uv run --locked uvicorn package.app.main:app
 ```
 
-ブラウザーの操作画面で `POST /repair-requests` を開き、**Try it out** を選びます。下の本文を入れて **Execute** を押すと、実際の応答が **Server response** に表示されます。[手元の操作画面を開く](http://127.0.0.1:8000/docs)
+ブラウザーの Swagger UI で `POST /repair-requests` を開き、**Try it out** を選びます。入力例から次の修理依頼を選んで **Execute** を押すと、実際の応答が **Server response** に表示されます。[手元の操作画面を開く](http://127.0.0.1:8000/docs)
 
 ```json
-{"title":"椅子の脚がぐらつく","location":"第1会議室"}
+{"title":"椅子がぐらつく","location":"第2会議室"}
 ```
 
 `201` と `status: open` が返り、ヘッダーの `Location` の末尾が本文の `id` と一致すれば、依頼の登録に成功しています。
 
-PostgreSQL と組み合わせて動かしたいときや、変更後にどのテストを実行するかを決めるときは、アプリの README を使ってください。[ローカル起動とテストの手順](../package/app/README.md)
+この入力例は自動テストでも使います。テストは FastAPI から生成した YAML を読み、画面で選んだ本文を直接 API に送ります。期待したステータスや応答項目と違えば、契約と実装のずれが分かります。PostgreSQL と組み合わせる手順、Ruff・mypy と契約テストのコマンドは、アプリの README にあります。[ローカル起動とテストの手順](../package/app/README.md)
 
 [前へ　OpenAPI で契約を表す](07-openapi.md) ・ [目次](../README.md) ・ [次へ　AWS に配置する](09-aws.md)

@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 .hypothesis/
 .ruff_cache/
+.mypy_cache/
 repairs.db*
 cdk.out/
 cdk.context.json

@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -6,6 +7,9 @@ from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
+NOT_FOUND = "修理依頼が見つかりません。"
 
 
 class Problem(BaseModel):
@@ -22,13 +26,19 @@ def status_title(code: int) -> str:
 
 def problems(*codes: int) -> dict:
     # 各ルートの responses に渡す定義。利用者が OpenAPI を読むと、起こりうるエラーと本文の形が分かる。
-    return {
+    responses: dict[int, dict[str, Any]] = {
         code: {
             "description": status_title(code),
             "content": {"application/problem+json": {"schema": Problem.model_json_schema()}},
         }
         for code in codes
     }
+    if 404 in responses:
+        missing = Problem(title=status_title(404), status=404, detail=NOT_FOUND)
+        responses[404]["content"]["application/problem+json"]["examples"] = {
+            "not-found": {"summary": "指定した依頼がない", "value": missing.model_dump()},
+        }
+    return responses
 
 
 def problem(code: int, detail: str, headers=None) -> JSONResponse:

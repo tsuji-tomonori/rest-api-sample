@@ -82,8 +82,11 @@ class RepairApiStack(Stack):
 
         # API は repair_api で依頼を読み書きする。マイグレーションは管理用ユーザーでテーブルと利用権限を用意する。
         api_handler = function("Api", "package.app.main.handler", api_secret, 28)
+        admin_secret = cluster.secret
+        if admin_secret is None:
+            raise ValueError("The migration function requires generated database credentials.")
         migrate = function(
-            "Migrate", "package.db.migrate.handler", cluster.secret, 120,
+            "Migrate", "package.db.migrate.handler", admin_secret, 120,
         )
         # マイグレーションは repair_api のログインを設定するため、API 用の認証情報も読む。
         migrate.add_environment("DB_APP_SECRET_ARN", api_secret.secret_arn)

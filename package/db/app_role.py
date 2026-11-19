@@ -3,6 +3,7 @@
 import json
 
 import boto3
+from psycopg import Connection as PsycopgConnection
 from psycopg import sql
 from sqlalchemy.engine import Connection
 
@@ -18,6 +19,8 @@ def grant_api_access(connection: Connection, secret_arn: str) -> None:
 def grant_runtime_role(connection: Connection, password: str) -> None:
     """AWS とローカルのどちらでも、API の接続に同じ権限を与える。"""
     dbapi_connection = connection.connection.driver_connection
+    if not isinstance(dbapi_connection, PsycopgConnection):
+        raise TypeError("Creating the runtime role requires a psycopg connection")
     with dbapi_connection.cursor() as cursor:
         cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = 'repair_api'")
         if cursor.fetchone() is None:
@@ -31,7 +34,7 @@ def grant_runtime_role(connection: Connection, password: str) -> None:
         )
         cursor.execute(
             sql.SQL("GRANT CONNECT ON DATABASE {} TO repair_api").format(
-                sql.Identifier(connection.engine.url.database)
+                sql.Identifier(dbapi_connection.info.dbname)
             )
         )
         # API は依頼の読み書きと受付番号の採番を担い、テーブル構造の変更は移行用の利用者が担う。

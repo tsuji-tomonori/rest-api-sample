@@ -1,0 +1,599 @@
+openapi: 3.1.0
+info:
+  title: 修理依頼 API
+  version: 1.0.0
+paths:
+  /repair-requests:
+    post:
+      summary: Create Repair
+      operationId: create_repair_repair_requests_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewRepair'
+            examples:
+              office-chair:
+                summary: 会議室の椅子を修理する
+                value:
+                  title: 椅子がぐらつく
+                  location: 第2会議室
+                x-expected-status: 201
+                x-expected-fields:
+                  title: 椅子がぐらつく
+                  location: 第2会議室
+                  status: open
+              trim-spaces:
+                summary: 件名と場所の前後に空白がある
+                value:
+                  title: '  照明が消える  '
+                  location: '  受付  '
+                x-expected-status: 201
+                x-expected-fields:
+                  title: 照明が消える
+                  location: 受付
+                  status: open
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Repair'
+          headers:
+            Location:
+              description: 登録した依頼のパス
+              schema:
+                type: string
+              example: /repair-requests/42
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+        '415':
+          description: Unsupported Media Type
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+        '422':
+          description: Unprocessable Content
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+      x-negative-examples:
+        blank-title:
+          summary: 件名が空白だけ
+          value:
+            title: '   '
+            location: 受付
+          x-expected-status: 422
+        client-id:
+          summary: 登録時に受付番号を指定した
+          value:
+            id: 42
+            title: 椅子がぐらつく
+            location: 第2会議室
+          x-expected-status: 422
+    get:
+      summary: List Repairs
+      operationId: list_repairs_repair_requests_get
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - open
+            - completed
+            type: string
+          - type: 'null'
+          title: Status
+        examples:
+          first-page:
+            value: open
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Limit
+        examples:
+          first-page:
+            value: 1
+      - name: after
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            maximum: 2147483647
+            minimum: 1
+          - type: 'null'
+          title: After
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepairPage'
+        '422':
+          description: Unprocessable Content
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+  /repair-requests/{request_id}:
+    get:
+      summary: Get Repair
+      operationId: get_repair_repair_requests__request_id__get
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+          title: Request Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Repair'
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+              examples:
+                not-found:
+                  summary: 指定した依頼がない
+                  value:
+                    type: about:blank
+                    title: Not Found
+                    status: 404
+                    detail: 修理依頼が見つかりません。
+        '422':
+          description: Unprocessable Content
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+    patch:
+      summary: Update Status
+      operationId: update_status_repair_requests__request_id__patch
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+          title: Request Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusChange'
+            examples:
+              complete:
+                summary: 依頼を完了する
+                value:
+                  status: completed
+                x-expected-status: 200
+                x-expected-fields:
+                  status: completed
+              reopen:
+                summary: 依頼を再開する
+                value:
+                  status: open
+                x-expected-status: 200
+                x-expected-fields:
+                  status: open
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Repair'
+        '400':
+          description: Bad Request
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+              examples:
+                not-found:
+                  summary: 指定した依頼がない
+                  value:
+                    type: about:blank
+                    title: Not Found
+                    status: 404
+                    detail: 修理依頼が見つかりません。
+        '415':
+          description: Unsupported Media Type
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+        '422':
+          description: Unprocessable Content
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+      x-negative-examples:
+        unknown-status:
+          summary: 定義されていない状態を指定した
+          value:
+            status: done
+          x-expected-status: 422
+        missing-status:
+          summary: 変更する状態を省略した
+          value: {}
+          x-expected-status: 422
+    delete:
+      summary: Delete Repair
+      operationId: delete_repair_repair_requests__request_id__delete
+      parameters:
+      - name: request_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+          title: Request Id
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+              examples:
+                not-found:
+                  summary: 指定した依頼がない
+                  value:
+                    type: about:blank
+                    title: Not Found
+                    status: 404
+                    detail: 修理依頼が見つかりません。
+        '422':
+          description: Unprocessable Content
+          content:
+            application/problem+json:
+              schema:
+                properties:
+                  type:
+                    default: about:blank
+                    title: Type
+                    type: string
+                  title:
+                    title: Title
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  detail:
+                    title: Detail
+                    type: string
+                required:
+                - title
+                - status
+                - detail
+                title: Problem
+                type: object
+components:
+  schemas:
+    NewRepair:
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[^\x00]+$
+          title: Title
+        location:
+          type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[^\x00]+$
+          title: Location
+      additionalProperties: false
+      type: object
+      required:
+      - title
+      - location
+      title: NewRepair
+    Repair:
+      properties:
+        id:
+          type: integer
+          maximum: 2147483647.0
+          minimum: 1.0
+          title: Id
+        title:
+          type: string
+          title: Title
+        location:
+          type: string
+          title: Location
+        status:
+          type: string
+          enum:
+          - open
+          - completed
+          title: Status
+      type: object
+      required:
+      - id
+      - title
+      - location
+      - status
+      title: Repair
+    RepairPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Repair'
+          type: array
+          title: Items
+        next_after:
+          anyOf:
+          - type: integer
+            maximum: 2147483647.0
+            minimum: 1.0
+          - type: 'null'
+          title: Next After
+      type: object
+      required:
+      - items
+      - next_after
+      title: RepairPage
+    StatusChange:
+      properties:
+        status:
+          type: string
+          enum:
+          - open
+          - completed
+          title: Status
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      title: StatusChange
