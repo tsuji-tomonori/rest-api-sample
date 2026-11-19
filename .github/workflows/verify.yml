@@ -84,10 +84,8 @@ jobs:
         run: docker compose run --rm integration
       - name: Verify Swagger UI configuration and all operations against the published contract
         run: uv run --locked --group contract python tests/contract/check.py
-      - name: Install Chromium for the Swagger UI test
-        run: uv run --locked --group contract playwright install --with-deps chromium
-      - name: Execute a GET from Swagger UI in Chromium
-        run: uv run --locked --group contract python tests/contract/swagger_ui.py
+      - name: Execute a GET from Swagger UI in the runner's Chrome
+        run: uv run --locked --group contract python tests/contract/swagger_ui.py --channel chrome
       - name: Show container status and logs on failure
         if: failure()
         run: |
