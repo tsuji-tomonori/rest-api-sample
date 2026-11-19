@@ -1,0 +1,22 @@
+# 教材スタック限定。ルールとリソースが増減したときは理由を再確認する。
+AwsSolutions-VPC7:
+  reason: 隔離ネットワークを短期間試す教材のためフローログを省く。業務利用時は通信調査に必要な保管期間を決める。
+  resources: [RepairApi/Vpc/Resource]
+AwsSolutions-SMG4:
+  reason: 移行関数がアプリ用パスワードを設定する。継続運用ではDBとシークレットを同期するローテーションを導入する。
+  resources: [RepairApi/Database/Secret/Resource, RepairApi/ApiSecret/Resource]
+AwsSolutions-RDS6:
+  reason: この例はTLS接続とSecrets ManagerのDB利用者認証を使う。
+  resources: [RepairApi/Database/Resource]
+AwsSolutions-RDS10:
+  reason: 検証後にスタックと台帳を削除できる教材用の設定。業務データを置く前に削除保護を有効にする。
+  resources: [RepairApi/Database/Resource]
+AwsSolutions-IAM4:
+  reason: Lambdaの実行ログとVPC接続にはCDKが付けるAWS管理ポリシーを使う。付与内容の変更はテンプレート差分で確認する。
+  resources: [RepairApi/Api/ServiceRole/Resource, RepairApi/Migrate/ServiceRole/Resource]
+AwsSolutions-APIG1:
+  reason: 教材のステージではアクセスログを省く。第12章に記録項目と有効化手順を示す。
+  resources: [RepairApi/Gateway/DefaultStage/Resource]
+AwsSolutions-IAM5:
+  reason: 疎通確認ロールに対象HTTP APIの既定ルートを許可する。ステージのワイルドカード以外の拡大はスナップショットで確認する。
+  resources: [RepairApi/PostDeployPolicy]

@@ -1,5 +1,25 @@
 # 修理依頼 API のデプロイ
 
+## 配置前にセキュリティと費用を確認する
+
+CI は Python の依存監査に加え、CDK のビルド対象から作った Lambda イメージも Trivy で検査します。Amazon Linux の更新では [公式リリースノート](https://docs.aws.amazon.com/linux/al2023/release-notes/)で修正版を確認し、`Dockerfile` の `AL2023_RELEASE` を更新します。ファイルの変更が CDK のイメージ資産にも反映されます。ローカルでの業務テストには Compose の `local` ステージを使います。配布イメージからはローカル専用 Lambda エミュレーターを除いています。
+
+リポジトリのルートで次を実行すると、AWS にリソースを作らずに CloudFormation テンプレートを検査できます。
+
+```console
+uv run --locked --group infra python -m pytest -q tests/infra
+```
+
+| 確認すること | この教材で許可する構成 |
+| --- | --- |
+| 継続費用 | NAT Gateway、Elastic IP、EC2 インスタンス、ロードバランサー、RDS Proxy は0件。Secrets Manager 用インターフェイスエンドポイントは2つの AZ に1個だけ配置する。ここには AZ ごとの時間料金がかかる |
+| DB | 暗号化した Aurora に非公開の Serverless v2 ライター1台。容量は0〜2 ACU、自動停止まで300秒。停止中もストレージやシークレットなどの費用は残る |
+| 管理タグ | タグ対応のリソースすべてに `Application=repair-api`、`Environment=sample`、`ManagedBy=aws-cdk`。タグの付けられないルートや関連付けもスナップショットで変更を確認する |
+| 入口とログ | 既定ルートの IAM 認可と、Lambda の2つのロググループの保存期間7日 |
+| セキュリティ | cdk-nag の AWS Solutions ルールを適用し、新しい指摘を CI で検出する。教材用に残した指摘は、理由と対象を[例外一覧](../../tests/infra/nag-exceptions.yaml)で確認できる |
+
+アサーションは守りたい条件を確かめます。スナップショットは、IAM ポリシーやネットワークを含むテンプレート全体の変更に気付くために使います。意図した構成変更では、手元で環境変数 `UPDATE_CDK_SNAPSHOT=1` を設定してテストを実行し、解除してから再実行します。PR では YAML の差分と費用・権限への影響を一緒に確認します。[検査コード](../../tests/infra/test_stack.py)・[CDK 公式のテスト手法](https://docs.aws.amazon.com/cdk/v2/guide/testing.html)・[cdk-nag](https://github.com/cdklabs/cdk-nag)・[PrivateLink の料金](https://aws.amazon.com/privatelink/pricing/)
+
 第10章で組み立てた API Gateway、Lambda、Aurora を AWS に配置します。手元から構築するときは「スタックを作成する」から、GitHub から自動配信するときは「GitHub Actions から継続的にデプロイする」から読みます。どちらも、スタックを適用し、DB を移行してから、公開 URL で一覧を取得する流れです。[構成と接続設定](../../docs/10-aws.md)
 
 ## スタックを作成する

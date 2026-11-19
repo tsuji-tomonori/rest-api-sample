@@ -1,4 +1,7 @@
 FROM public.ecr.aws/lambda/python:3.12 AS runtime
+# ベースの公開後に修正された Amazon Linux 2023 のパッケージも取り込む。
+ARG AL2023_RELEASE=2023.12.20261112
+RUN dnf --releasever=${AL2023_RELEASE} upgrade -y && dnf clean all
 
 # uv.lock に記録した依存パッケージをここで準備し、実行用イメージにコピーする。
 FROM runtime AS dependencies
@@ -16,6 +19,8 @@ COPY package/db /build/package/db
 ENTRYPOINT []
 
 FROM runtime
+# エミュレーターはローカル用ステージに残す。AWS では Lambda の実行環境がイベントを渡す。
+RUN rm -f /usr/local/bin/aws-lambda-rie
 # DB に接続するとき、この認証局の証明書を使って Aurora のサーバー証明書を検証する。
 ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /opt/rds-global-bundle.pem
 RUN chmod 0444 /opt/rds-global-bundle.pem
