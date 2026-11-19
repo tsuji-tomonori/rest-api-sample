@@ -31,6 +31,7 @@ contract = [
 ]
 infra = [
     "aws-cdk-lib==2.220.0",
+    "cdk-nag>=2.35,<3",
     "constructs>=10,<11",
 ]
 

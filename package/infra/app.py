@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from aws_cdk import App, CfnCondition, CfnOutput, CfnParameter, Duration, Fn, IgnoreMode, RemovalPolicy, Stack
+from aws_cdk import App, CfnCondition, CfnOutput, CfnParameter, Duration, Fn, IgnoreMode, RemovalPolicy, Stack, Tags
 from aws_cdk import aws_apigatewayv2 as apigw
 from aws_cdk import aws_apigatewayv2_authorizers as authorizers
 from aws_cdk import aws_apigatewayv2_integrations as integrations
@@ -17,6 +17,11 @@ from constructs import Construct
 class RepairApiStack(Stack):
     def __init__(self, scope: Construct, construct_id: str) -> None:
         super().__init__(scope, construct_id)
+        # 配賦・問い合わせ・環境の識別に使うタグを、対応する全リソースに伝播する。
+        for key, value in {
+            "Application": "repair-api", "Environment": "sample", "ManagedBy": "aws-cdk",
+        }.items():
+            Tags.of(self).add(key, value)
         # 利用者の入口は API Gateway。Lambda と DB の通信には、インターネットへの経路を持たないサブネットを使う。
         vpc = ec2.Vpc(
             self, "Vpc", max_azs=2, nat_gateways=0,
@@ -123,6 +128,7 @@ class RepairApiStack(Stack):
         CfnOutput(self, "InvokeArn", value=invoke_arn)
 
 
-app = App()
-RepairApiStack(app, "RepairApi")
-app.synth()
+if __name__ == "__main__":
+    app = App()
+    RepairApiStack(app, "RepairApi")
+    app.synth()
