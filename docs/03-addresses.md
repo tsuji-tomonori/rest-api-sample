@@ -22,30 +22,55 @@ HTTP では、**URI（Uniform Resource Identifier）** で対象を識別しま�
 
 ## 入力は、その値を使う目的で分ける
 
-宛先を決めたら、残りの入力を置く場所を考えます。**クエリ**は URI の `?` に続く部分、**ヘッダー**は本文の形式などを知らせる項目、**リクエスト本文**は相手に届けるデータです。[RFC 3986 §3.4](https://www.rfc-editor.org/rfc/rfc3986.html#section-3.4)・[RFC 9110 §6.3–6.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-6.3)
+パスとクエリの値は、どちらも URL に含まれます。パスの `/orders/42` のうち、注文を選ぶ値 `42` が **パスパラメータ** です。`?` に続く `limit=10` のような名前と値の組を **クエリパラメータ** と呼びます。URL の外で送るのが、要求に関する追加情報を伝える **リクエストヘッダー** と、データ本体を届ける **リクエストボディ（本文）** です。[RFC 3986 §3.3–3.4](https://www.rfc-editor.org/rfc/rfc3986.html#section-3.3)・[RFC 9110 §6.3–6.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-6.3)
 
-| 置き場所 | 何を伝えるか | 例 | どこに現れるか |
-| --- | --- | --- | --- |
-| パス | 操作の対象 | `/orders/42` の `42` | URL の一部。ページを開くとアドレス欄に表示される |
-| クエリ | 一覧の絞り込みや返す件数 | `?status=unshipped&limit=10` | URL の一部。URL をコピーすると条件も含まれる |
-| ヘッダー | 受け取りたい形式、送る本文の形式、認証情報など | `Accept: application/json`、`Authorization` | URL の外。送受信するプログラムや、設定に応じて通信の記録に現れる |
-| リクエスト本文 | 登録する内容、対象に加える変更 | `{"status":"shipped"}` | URL の外。受付側のアプリが読み取る。本文を記録する設定ならログにも残る |
+| 置き場所 | 何を入れるとよいか | 何を避けるか、その理由 |
+| --- | --- | --- |
+| パスパラメータ | 個別の対象を指す番号。例は `/orders/42` の `42` | パスワードや秘密の API キー。URL の一部になり、共有や記録の際に値まで残る |
+| クエリパラメータ | 検索条件、順序、件数。例は `?status=unshipped&limit=10` | 秘密のトークンや個人情報。ページを開くと、条件を含んだ URL が閲覧履歴に残り得る |
+| リクエストボディ | 登録する注文の明細、変更する値、ログイン時に提出する情報 | GET の一覧検索の条件。GET の本文には HTTP で一般に定義された意味がなく、受信側が解釈するとは限らない |
+| リクエストヘッダー | 欲しい応答形式は `Accept`、送る本文の形式は `Content-Type`、Bearer トークンは `Authorization` | 注文明細のような業務データを独自ヘッダーに詰めること。構造を持つデータは本文にまとめると、項目の型や意味を仕様書で表しやすい |
 
-同じ `status` でも、未発送の注文を**探す**ならクエリに、特定の注文を発送済みに**変える**なら本文に置きます。たとえば最初の要求は次のように読めます。1行目は「未発送の注文を最大10件」、最後の行は「応答は JSON 形式を希望」です。[RFC 9110 §9.3.1 GET](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1)・[§12.5.1 Accept](https://www.rfc-editor.org/rfc/rfc9110.html#section-12.5.1)
+同じ `status` でも、未発送の注文を**探す**ならクエリに、注文42を発送済みに**変える**なら `PATCH /orders/42` の本文に `{"status":"shipped"}` と書きます。[RFC 9110 §9.3.1 GET](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1)・[第4章　操作に合うメソッドを選ぶ](04-methods.md)
 
-```http
-GET /orders?status=unshipped&limit=10 HTTP/1.1
-Host: example.com
-Accept: application/json
+### 一覧から1件の詳細を開く
+
+一覧で注文を選び、その詳細を開くまでを比べてみましょう。次は、未発送の注文が1件あるときの要求と応答の例です。
+
+| 画面での操作 | HTTP の要求 | 成功時の応答例 |
+| --- | --- | --- |
+| 未発送の注文を並べる | `GET /orders?status=unshipped&limit=10` | `200` と `{"items":[{"id":42,"status":"unshipped"}],"next_after":null}` |
+| 選んだ注文42の商品と数量を見る | `GET /orders/42` | `200` と `{"id":42,"status":"unshipped","product_id":"P7","quantity":2}` |
+
+一覧は、結果が1件でも `items` の配列を返します。画面はその中の注文番号を取り出し、詳細のパスに使います。詳細は注文1件を表すので、商品や数量を直接読めます。ここでの JSON の形は、この API で決めた契約です。
+
+### 登録時の ID は誰が決めるか
+
+登録要求を組み立てるときは、**これから作る対象の ID** と、**すでにある対象を指す ID** を分けて考えます。商品 P7 を2個注文する例と、既存の注文に明細を足す例を比べましょう。[RFC 9110 §9.3.3 POST](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.3)・[§9.3.4 PUT](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.4)
+
+| ID の決め方 | 要求と JSON 本文の例 | なぜそこに置くか |
+| --- | --- | --- |
+| サーバーが新しい注文番号を振る | `POST /orders`　`{"product_id":"P7","quantity":2}` | 本文は既存の商品番号と数量。新しい注文番号は送らず、作成後に `201` と `Location: /orders/42` で知る |
+| 注文42に明細を追加し、サーバーが明細番号を振る | `POST /orders/42/lines`　`{"product_id":"P8","quantity":1}` | 親の注文番号はパスにあり、書き直す必要はない。本文の商品番号は何を買うかを指す。新しい明細番号はこれから決まる |
+| 呼び出し側が新しい注文番号を決められる別の契約 | `PUT /orders/57`　`{"product_id":"P7","quantity":2,"status":"unshipped"}` | 注文番号をパスで指定し、そこに保存する注文の完成形を本文で渡す |
+
+最後の `PUT` を新規作成だけに使いたいときは、`If-None-Match: *` ヘッダーを添えると、その宛先にすでに注文があれば上書きせず `412 Precondition Failed` が返ります。[RFC 9110 §13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.2)
+
+パスと本文の両方で同じ対象の ID を受け取る契約なら、不一致の扱いも決めます。たとえば `PUT /orders/42` に本文の `id` が `57` で届いたら、どちらも変更せず `400 Bad Request` を返す、と明記します。ここでの `400` は設計例です。こうした入出力の決め方を業務全体に当てはめる手順は、第6章で扱います。[RFC 9110 §15.5.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.1)・[第6章　業務を API の契約にする](06-contract.md)
+
+### パスワードとアクセストークンはどこへ送るか
+
+たとえば、自社のログイン画面から自社の認証サービスにパスワードを送る API を設計します。ここでは宛先を `POST /sessions` とし、HTTPS で次の JSON を本文に送ります。ヘッダーには `Content-Type: application/json` を付けます。項目の値は説明用のプレースホルダーです。[RFC 9110 §8.3 Content-Type](https://www.rfc-editor.org/rfc/rfc9110.html#section-8.3)・[OWASP「HTTP 要求に含まれる機密情報」](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html#sensitive-information-in-http-requests)
+
+```json
+{"login_id":"<ログインID>","password":"<入力したパスワード>"}
 ```
 
-JSON の本文を送るときは、送り手が `Content-Type: application/json` と記します。`Accept` は欲しい応答の形式、`Content-Type` は実際に付けた本文の形式です。GET の本文には HTTP で一般に定義された意味がないため、この例では絞り込み条件をクエリで渡します。[RFC 9110 §8.3 Content-Type](https://www.rfc-editor.org/rfc/rfc9110.html#section-8.3)・[第4章　操作に合うメソッドを選ぶ](04-methods.md)
+ログイン後、アクセスを許されたことを示す **アクセストークン** を使う設計もあります。Bearer 方式なら、以後の API 呼び出しでは `Authorization: Bearer <アクセストークン>` とヘッダーに指定します。**パスワード、秘密のトークン、秘密の API キーは、パスにもクエリにも入れません。** URL はそのまま共有でき、サーバーや中継機器の設定によってアクセスログにも残るためです。[RFC 6750 §2.1](https://www.rfc-editor.org/rfc/rfc6750.html#section-2.1)・[RFC 9700 §4.3.2](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.3.2)・[RFC 9110 §17.9](https://www.rfc-editor.org/rfc/rfc9110.html#section-17.9)
 
-### URL に残す情報を選ぶ
+通信中の値を暗号化するのは、HTTPS が使う **TLS** です。ヘッダーや本文に書くこと自体には、暗号化の働きはありません。TLS の接続を受けるサーバーや中継機器は内容を読み取れます。ヘッダーや本文を記録する設定なら、そこにも値が残ります。ログインの本文や認証ヘッダーを丸ごと記録せず、必要な項目だけをログに残します。[RFC 8446 §1 TLS の役割](https://www.rfc-editor.org/rfc/rfc8446.html#section-1)・[OWASP「ログから除外するデータ」](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#data-to-exclude)
 
-HTTPS は、暗号化された接続を通る間の要求を保護します。受信したサーバーや、HTTPS の接続をいったん受けて次へ渡す中継機器は、その区間の内容を読めます。URL はアクセスログの設定によって記録され、ブラウザーでページとして開けば閲覧履歴にも残り得ます。画面の裏で呼んだ API の URL が、毎回アドレス欄に出るわけではありません。[RFC 9110 §4.2.2 HTTPS](https://www.rfc-editor.org/rfc/rfc9110.html#section-4.2.2)・[§17.9 URI に含まれる機密情報](https://www.rfc-editor.org/rfc/rfc9110.html#section-17.9)
-
-そのため、認証用のトークンは URL に含めず、採用した方式で定める場所に渡します。たとえば Bearer 認証では `Authorization` ヘッダーを使います。ヘッダーや本文に入れた値も、送受信側では読めます。ログに残す項目を決めるときは、トークンやパスワードを記録対象から外します。[RFC 6750 §2.1 Bearer 認証](https://www.rfc-editor.org/rfc/rfc6750.html#section-2.1)・[OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#data-to-exclude)
+ログイン後に自分の情報を読む `GET /me` の例は、第4章で HTTP の要求として読み解きます。[第4章　操作に合うメソッドを選ぶ](04-methods.md)
 
 ## 省略・組み合わせ・続きの意味を決める
 
