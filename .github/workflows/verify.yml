@@ -78,6 +78,11 @@ jobs:
         run: >-
           docker run --rm --entrypoint python repair-sample -c
           'from package.app.main import handler; from package.db.migrate import handler as migrate'
+      - name: Audit the deployable Lambda image
+        run: |
+          docker save repair-sample -o "$RUNNER_TEMP/repair-sample.tar"
+          docker run --rm -v "$RUNNER_TEMP/repair-sample.tar:/image.tar:ro" aquasec/trivy:0.76.2 image \
+            --input /image.tar --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
 
   integration:
     runs-on: ubuntu-24.04

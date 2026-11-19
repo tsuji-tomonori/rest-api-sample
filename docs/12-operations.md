@@ -70,6 +70,8 @@ AWS の製品名に注意しましょう。この教材は API Gateway の **HTT
 
 直接指定した版は `pyproject.toml` を直して `uv lock` を実行します。間接依存なら `uv lock --upgrade-package パッケージ名` で対象を更新します。ロックファイルを一緒にレビューし、再監査と契約テストを通します。実行用ライブラリを更新したら、新しいイメージを配信して疎通を確認するまでを対応に含めます。修正版がまだない場合は、影響する機能、暫定対策、担当者、再確認日を記録します。[pip-audit](https://github.com/pypa/pip-audit)・[インフラの検査手順](../package/infra/README.md)
 
+配布用 Lambda イメージについても、CI で Trivy が OS とライブラリを検査します。修正版がある高・緊急（HIGH・CRITICAL）の指摘があると配信を止めます。ベースイメージに原因がある場合は修正を含む版からビルドし直し、実際に配信するイメージで再検査します。[Trivy のコンテナイメージ検査](https://trivy.dev/docs/latest/target/container_image/)
+
 ## この章で決めたこと
 
 - 業務の成功条件を先に決め、入口の HTTP レスポンスから Lambda、DB の順に同じ時間帯を調べる。
