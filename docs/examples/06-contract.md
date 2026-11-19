@@ -32,4 +32,4 @@
 
 **C1 結果を予測する**では、別の担当者にこの表を渡します。「件名の前後に空白がある場合」「件名が空白だけの場合」のそれぞれについて、保存される値とレスポンスを答え合わせできます。[空欄の設計シート](../templates/contract-sheet.md)
 
-[前へ　第5章](05-responses.md) ｜ [教科書 06](../textbook/06-contract.md) ｜ [シート B9](../templates/contract-sheet.md#b9) ｜ [次へ　第7章](07-openapi.md) ｜ [目次](../../README.md)
+[前へ　第5章](05-responses.md) ｜ [教科書 06](../textbook/06-contract.md) ｜ [実装 06](../implementation/06-contract.md) ｜ [シート B9](../templates/contract-sheet.md#b9) ｜ [次へ　第7章](07-openapi.md) ｜ [目次](../../README.md)

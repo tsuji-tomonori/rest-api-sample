@@ -40,4 +40,4 @@
 - [OWASP　各リクエストで認可を確認する](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html#validate-the-permissions-on-every-request)・[RFC 9110 §9.2.2　冪等性と再送](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.2)
 - [PostgreSQL　トランザクション](https://www.postgresql.org/docs/current/tutorial-transactions.html)・[RFC 5789 §2　PATCH の原子性](https://www.rfc-editor.org/rfc/rfc5789.html#section-2)・[Amazon Builders’ Library　再送と同じ操作の識別](https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/)
 
-[前へ　第5章](05-responses.md) ｜ [実例 06](../examples/06-contract.md) ｜ [シート B9](../templates/contract-sheet.md#b9) ｜ [次へ　第7章](07-openapi.md) ｜ [目次](../../README.md)
+[前へ　第5章](05-responses.md) ｜ [実例 06](../examples/06-contract.md) ｜ [実装 06](../implementation/06-contract.md) ｜ [シート B9](../templates/contract-sheet.md#b9) ｜ [次へ　第7章](07-openapi.md) ｜ [目次](../../README.md)

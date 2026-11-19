@@ -67,6 +67,7 @@ GitHub の **Verify sample** は、push とプルリクエストでテストを�
 
 ## 実装時の参照先
 
+- 設計した入力とメソッドを Python に写す。[パス・クエリ・本文の宣言](../../docs/implementation/03-inputs.md)・[FastAPI のルートとメソッド](../../docs/implementation/04-methods.md)
 - 仕様を読み、入力例を追加する。[OpenAPI の書き方](../../docs/textbook/07-openapi.md)・[仕様書の生成コード](export_openapi.py)・[FastAPI の名前付き入力例](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter)
 - 入力と保存結果をテストする。[単体テスト](../../tests/unit)・[FastAPI と SQLite](../../tests/test_api.py)・[HTTP と PostgreSQL](../../tests/integration/test_repair_workflow.py)・[公開 YAML の契約テスト](../../tests/contract/check.py)
 - Swagger UI の画面を表示するためのファイルを確認する。[FastAPI の画面用ファイル](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/)

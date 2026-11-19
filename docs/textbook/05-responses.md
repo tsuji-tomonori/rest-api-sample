@@ -49,4 +49,4 @@
 - [RFC 9110 §15　ステータスコード](https://www.rfc-editor.org/rfc/rfc9110.html#section-15)・[§10.2.2　Location](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.2)・[RFC 6585 §4　429](https://www.rfc-editor.org/rfc/rfc6585.html#section-4)
 - [RFC 9457 §3　Problem Details](https://www.rfc-editor.org/rfc/rfc9457.html#section-3)・[RFC 9111 §5.2.2　キャッシュの指定](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2)
 
-[前へ　第4章](04-methods.md) ｜ [実例 05](../examples/05-responses.md) ｜ [シート B6](../templates/contract-sheet.md#b6) ｜ [次へ　第6章](06-contract.md) ｜ [目次](../../README.md)
+[前へ　第4章](04-methods.md) ｜ [実例 05](../examples/05-responses.md) ｜ [実装 05](../implementation/05-responses.md) ｜ [シート B6](../templates/contract-sheet.md#b6) ｜ [次へ　第6章](06-contract.md) ｜ [目次](../../README.md)

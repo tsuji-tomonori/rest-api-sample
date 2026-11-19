@@ -24,4 +24,4 @@
 
 **C3 公開済みの契約を変える**に、旧画面で使っている入力と期待結果を具体的に書きます。この例なら「旧画面の `title` を含む登録が引き続き `201` になり、返った宛先で同じ件名を読める」です。変更後の確認方法、移行する利用者、旧版の終了条件も同じ欄に残します。[設計シートの公開前点検](../templates/contract-sheet.md#review)
 
-[前へ　第7章](07-openapi.md) ｜ [教科書 08](../textbook/08-compatibility.md) ｜ [シート C3](../templates/contract-sheet.md#c3) ｜ [補足　会議室予約](room-booking.md) ｜ [目次](../../README.md)
+[前へ　第7章](07-openapi.md) ｜ [教科書 08](../textbook/08-compatibility.md) ｜ [実装 08](../implementation/08-compatibility.md) ｜ [シート C3](../templates/contract-sheet.md#c3) ｜ [補足　会議室予約](room-booking.md) ｜ [目次](../../README.md)

@@ -46,4 +46,4 @@
 - [RFC 9110 §9.2 安全性と冪等性](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2)・[§9.3 各メソッドの意味](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3)・[RFC 5789 §2 部分変更の意味と原子性](https://www.rfc-editor.org/rfc/rfc5789.html#section-2)
 - [AWS Builders’ Library 再送時の重複防止](https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/)・[Google AIP-164 論理削除を取り入れる設計例](https://google.aip.dev/164)
 
-[前へ　第3章](03-inputs.md) ｜ [実例 04](../examples/04-methods.md) ｜ [シート B2](../templates/contract-sheet.md#b2) ｜ [次へ　第5章](05-responses.md) ｜ [目次](../../README.md)
+[前へ　第3章](03-inputs.md) ｜ [実例 04](../examples/04-methods.md) ｜ [実装 04](../implementation/04-methods.md) ｜ [シート B2](../templates/contract-sheet.md#b2) ｜ [次へ　第5章](05-responses.md) ｜ [目次](../../README.md)

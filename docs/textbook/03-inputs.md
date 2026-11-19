@@ -46,4 +46,4 @@
 - [RFC 6750 §2.1 Bearer トークンの送信](https://www.rfc-editor.org/rfc/rfc6750.html#section-2.1)・[OWASP Logging Cheat Sheet 記録から除くデータ](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#data-to-exclude)
 - [OpenAPI 3.1.1 Parameter Object](https://spec.openapis.org/oas/v3.1.1.html#parameter-object)・[Google AIP-158 一覧のページ分割](https://google.aip.dev/158)
 
-[前へ　第2章](02-resources.md) ｜ [実例 03](../examples/03-inputs.md) ｜ [シート B3](../templates/contract-sheet.md#b3) ｜ [次へ　第4章](04-methods.md) ｜ [目次](../../README.md)
+[前へ　第2章](02-resources.md) ｜ [実例 03](../examples/03-inputs.md) ｜ [実装 03](../implementation/03-inputs.md) ｜ [シート B3](../templates/contract-sheet.md#b3) ｜ [次へ　第4章](04-methods.md) ｜ [目次](../../README.md)

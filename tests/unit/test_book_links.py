@@ -1,4 +1,4 @@
-"""教材内の参照先と、教科書・実例・シートの対応が保たれているか調べる。"""
+"""教材内の参照先と、教科書・実例・実装・設計シートの対応を調べる。"""
 
 import re
 from pathlib import Path
@@ -29,12 +29,21 @@ def test_book_links_resolve():
     assert not missing, "\n".join(missing)
 
 
-def test_textbook_examples_and_sheet_cover_the_same_topics():
+def test_chapters_match_across_guides():
     chapters = sorted(path.name for path in (DOCS / "textbook").glob("[0-9][0-9]-*.md"))
-    examples = sorted(path.name for path in (DOCS / "examples").glob("[0-9][0-9]-*.md"))
-    assert chapters == examples
     assert [name[:2] for name in chapters] == [f"{number:02}" for number in range(1, 9)]
+    for directory in ("examples", "implementation"):
+        assert sorted(path.name for path in (DOCS / directory).glob("[0-9][0-9]-*.md")) == chapters
+
+    contents = (ROOT / "README.md").read_text(encoding="utf-8")
+    index = (DOCS / "implementation/README.md").read_text(encoding="utf-8")
     sheet = SHEET.read_text(encoding="utf-8")
     for chapter in chapters:
-        assert f"../textbook/{chapter}" in sheet
-        assert f"../examples/{chapter}" in sheet
+        implementation = (DOCS / "implementation" / chapter).read_text(encoding="utf-8")
+        assert f"](docs/implementation/{chapter})" in contents
+        assert f"]({chapter})" in index
+        for directory in ("textbook", "examples"):
+            paired_page = (DOCS / directory / chapter).read_text(encoding="utf-8")
+            assert f"](../implementation/{chapter})" in paired_page
+            assert f"](../{directory}/{chapter})" in implementation
+            assert f"](../{directory}/{chapter})" in sheet

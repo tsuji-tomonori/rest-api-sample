@@ -42,4 +42,4 @@
 - [セマンティックバージョニング 2.0.0](https://semver.org/lang/ja/)・[OpenAPI 3.1.1　Info Object](https://spec.openapis.org/oas/v3.1.1.html#info-object)
 - [Google AIP-180　後方互換性](https://google.aip.dev/180)・[AIP-185　版の付け方](https://google.aip.dev/185)・[AWS　HTTP API のステージ](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-stages.html)
 
-[前へ　第7章](07-openapi.md) ｜ [実例 08](../examples/08-compatibility.md) ｜ [シート C3](../templates/contract-sheet.md#c3) ｜ [目次](../../README.md)
+[前へ　第7章](07-openapi.md) ｜ [実例 08](../examples/08-compatibility.md) ｜ [実装 08](../implementation/08-compatibility.md) ｜ [シート C3](../templates/contract-sheet.md#c3) ｜ [目次](../../README.md)

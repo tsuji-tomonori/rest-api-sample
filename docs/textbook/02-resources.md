@@ -42,4 +42,4 @@ REST の原典は Fielding の学位論文です。クライアントとサー�
 - [Fielding 第5章 REST の制約とリソース](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm)・[RFC 9110 §3.1–3.2 リソースと表現](https://www.rfc-editor.org/rfc/rfc9110.html#section-3.1)
 - [RFC 3986 §3.3 パスの構造](https://www.rfc-editor.org/rfc/rfc3986.html#section-3.3)・[Google AIP-122 リソースの命名規約の例](https://google.aip.dev/122)
 
-[前へ　第1章](01-http.md) ｜ [実例 02](../examples/02-resources.md) ｜ [シート A2](../templates/contract-sheet.md#a2) ｜ [次へ　第3章](03-inputs.md) ｜ [目次](../../README.md)
+[前へ　第1章](01-http.md) ｜ [実例 02](../examples/02-resources.md) ｜ [実装 02](../implementation/02-resources.md) ｜ [シート A2](../templates/contract-sheet.md#a2) ｜ [次へ　第3章](03-inputs.md) ｜ [目次](../../README.md)

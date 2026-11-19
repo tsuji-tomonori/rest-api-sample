@@ -55,4 +55,4 @@ curl -i "http://127.0.0.1:8000/repair-requests/NUMBER"
 
 </details>
 
-[前へ　第3章](03-inputs.md) ｜ [教科書 04](../textbook/04-methods.md) ｜ [シート B2](../templates/contract-sheet.md#b2) ｜ [次へ　第5章](05-responses.md) ｜ [目次](../../README.md)
+[前へ　第3章](03-inputs.md) ｜ [教科書 04](../textbook/04-methods.md) ｜ [実装 04](../implementation/04-methods.md) ｜ [シート B2](../templates/contract-sheet.md#b2) ｜ [次へ　第5章](05-responses.md) ｜ [目次](../../README.md)

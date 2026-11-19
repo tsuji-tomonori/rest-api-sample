@@ -96,4 +96,4 @@ uv run --locked python -m package.app.export_openapi --check docs/openapi.yaml
 
 </details>
 
-[前へ　第6章](06-contract.md) ｜ [教科書 07](../textbook/07-openapi.md) ｜ [シート C2](../templates/contract-sheet.md#c2) ｜ [次へ　第8章](08-compatibility.md) ｜ [目次](../../README.md)
+[前へ　第6章](06-contract.md) ｜ [教科書 07](../textbook/07-openapi.md) ｜ [実装 07](../implementation/07-openapi.md) ｜ [シート C2](../templates/contract-sheet.md#c2) ｜ [次へ　第8章](08-compatibility.md) ｜ [目次](../../README.md)

@@ -44,4 +44,4 @@ curl -i "http://127.0.0.1:8000/repair-requests?status=completed&limit=1"
 
 </details>
 
-[前へ　第2章](02-resources.md) ｜ [教科書 03](../textbook/03-inputs.md) ｜ [シート B3](../templates/contract-sheet.md#b3) ｜ [次へ　第4章](04-methods.md) ｜ [目次](../../README.md)
+[前へ　第2章](02-resources.md) ｜ [教科書 03](../textbook/03-inputs.md) ｜ [実装 03](../implementation/03-inputs.md) ｜ [シート B3](../templates/contract-sheet.md#b3) ｜ [次へ　第4章](04-methods.md) ｜ [目次](../../README.md)

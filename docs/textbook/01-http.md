@@ -61,4 +61,4 @@ API でも一括受付ができ、ファイルも到着直後に処理できま�
 - [MDN「API」](https://developer.mozilla.org/ja/docs/Glossary/API)・[RFC 9110 §3.3–3.4 呼び出す側と受ける側](https://www.rfc-editor.org/rfc/rfc9110.html#section-3.3)・[§6 HTTP メッセージ](https://www.rfc-editor.org/rfc/rfc9110.html#section-6)
 - [RFC 8259 §4 JSON オブジェクト](https://www.rfc-editor.org/rfc/rfc8259.html#section-4)・[Hohpe・Woolf『Enterprise Integration Patterns』File Transfer](https://www.enterpriseintegrationpatterns.com/patterns/messaging/FileTransferIntegration.html)
 
-[実例 01](../examples/01-http.md) ｜ [シート A1](../templates/contract-sheet.md#a1) ｜ [次へ　第2章](02-resources.md) ｜ [目次](../../README.md)
+[実例 01](../examples/01-http.md) ｜ [実装 01](../implementation/01-http.md) ｜ [シート A1](../templates/contract-sheet.md#a1) ｜ [次へ　第2章](02-resources.md) ｜ [目次](../../README.md)

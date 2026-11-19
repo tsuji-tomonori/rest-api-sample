@@ -42,4 +42,4 @@ curl -i "http://127.0.0.1:8000/repair-requests?limit=0"
 
 </details>
 
-[前へ　第4章](04-methods.md) ｜ [教科書 05](../textbook/05-responses.md) ｜ [シート B6](../templates/contract-sheet.md#b6) ｜ [次へ　第6章](06-contract.md) ｜ [目次](../../README.md)
+[前へ　第4章](04-methods.md) ｜ [教科書 05](../textbook/05-responses.md) ｜ [実装 05](../implementation/05-responses.md) ｜ [シート B6](../templates/contract-sheet.md#b6) ｜ [次へ　第6章](06-contract.md) ｜ [目次](../../README.md)
