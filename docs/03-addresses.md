@@ -4,7 +4,13 @@
 
 ## 集合と1件に名前を付ける
 
-HTTP では **URI（Uniform Resource Identifier）** という識別子で対象を指定します。`https://example.com/orders/42` なら、`https` は通信方式を表し、`example.com` はホスト名、`/orders/42` は対象への **パス** です。集合のパスを `/orders`、個別の注文を `/orders/{order_id}` と表せます。波かっこは、仕様書のひな型で値を入れ替える箇所を示します。実際の要求では `/orders/42` と書きます。[RFC 3986 §3](https://www.rfc-editor.org/rfc/rfc3986.html#section-3)・[OpenAPI 3.1.1 Path Templating](https://spec.openapis.org/oas/v3.1.1.html#path-templating)
+HTTP では、対象を指定するために **URI（Uniform Resource Identifier）** という識別子を使います。注文42の URI を例に、どこに何を書くかを見てみましょう。
+
+![注文42の URI の内訳。https がスキーム、example.com がホスト名、/orders/42 がパス。仕様書の /orders/{order_id} に注文番号 42 を当てはめると /orders/42 になる。](assets/order-uri.svg)
+
+`https` は **スキーム**で、この例では HTTPS で通信することを示します。`example.com` は接続先の **ホスト名**、`/orders/42` はそのホストで注文42を指す **パス** です。[RFC 3986 §3 URI の構成](https://www.rfc-editor.org/rfc/rfc3986.html#section-3)
+
+注文ごとに変わるのは番号です。そこで仕様書には、番号を入れる位置に名前を付けて `/orders/{order_id}` と書きます。この `order_id` が **パスパラメータ** です。注文42を開くときは、`{order_id}` を波かっこごと `42` に置き換えます。注文57なら、送るパスは `/orders/57` になります。[OpenAPI 3.1.1 Path Templating](https://spec.openapis.org/oas/v3.1.1.html#path-templating)
 
 集合に複数形の名詞を使うのは、「何を扱うか」が伝わる命名規約です。RFC 3986 が定めるのは、パスを `/` で区切るといった構文です。名前には業務で通じる言葉を選び、単数・複数や複合語の綴り方は API 内でそろえます。[RFC 3986 §3.3](https://www.rfc-editor.org/rfc/rfc3986.html#section-3.3)・[Google AIP-122 Collection identifiers](https://google.aip.dev/122#collection-identifiers)
 

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="366" viewBox="0 0 720 366" role="img" aria-labelledby="title desc" lang="ja">
+  <title id="title">注文42を開く URI とパスのひな型</title>
+  <desc id="desc">https://example.com/orders/42 のうち、https はスキーム、example.com はホスト名、/orders/42 はパス全体。仕様書の /orders/{order_id} の波かっこを含む部分を注文番号 42 に置き換えると、実際のパスは /orders/42 になる。</desc>
+  <style>
+    .label { font-family: "Noto Sans CJK JP", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif; fill: #243841; }
+    .code { font-family: "Cascadia Mono", "SFMono-Regular", Consolas, "DejaVu Sans Mono", monospace; }
+    .guide { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .schema { fill: #304a75; }
+    .host { fill: #006861; }
+    .path { fill: #2c4650; }
+    .value { fill: #914512; font-weight: 700; }
+  </style>
+  <rect x="1" y="1" width="718" height="364" rx="16" fill="#fffefa" stroke="#cbd7d6" stroke-width="2"/>
+  <text class="label" x="36" y="44" font-size="23" font-weight="700">注文42を開く URI</text>
+  <rect x="620" y="62" width="49" height="42" rx="5" fill="#ffe7c2"/>
+  <g class="code" font-size="35" aria-label="https://example.com/orders/42">
+    <text x="56" y="96" class="schema" textLength="105" lengthAdjust="spacingAndGlyphs">https</text>
+    <text x="161" y="96" fill="#52626b" textLength="63" lengthAdjust="spacingAndGlyphs">://</text>
+    <text x="224" y="96" class="host" textLength="231" lengthAdjust="spacingAndGlyphs">example.com</text>
+    <text x="455" y="96" class="path" textLength="168" lengthAdjust="spacingAndGlyphs">/orders/</text>
+    <text x="623" y="96" class="value" textLength="42" lengthAdjust="spacingAndGlyphs">42</text>
+  </g>
+  <g class="guide">
+    <path stroke="#46638b" d="M57 110v7h103v-7 M108.5 117v10"/>
+    <path stroke="#16776d" d="M225 110v7h229v-7 M339.5 117v10"/>
+    <path stroke="#4a626a" d="M456 110v7h208v-7 M560 117v10"/>
+  </g>
+  <g class="label" text-anchor="middle" font-weight="700" font-size="23">
+    <text x="108.5" y="153">スキーム</text>
+    <text x="339.5" y="153">ホスト名</text>
+    <text x="560" y="153">パス</text>
+  </g>
+
+  <path d="M2 179h716v170q0 15 -15 15H17q-15 0 -15 -15Z" fill="#f1f6f4"/>
+  <path d="M2 179h716" stroke="#cbd7d6" stroke-width="1.5"/>
+  <g class="label" font-size="23" font-weight="700">
+    <text x="36" y="232">仕様書のパス</text>
+    <text x="36" y="331">実際のパス</text>
+  </g>
+  <g class="code" font-size="30">
+    <rect x="357" y="200" width="191" height="42" rx="5" fill="#ffe7c2"/>
+    <text x="216" y="232" class="path" textLength="144" lengthAdjust="spacingAndGlyphs">/orders/</text>
+    <text x="360" y="232" class="value" textLength="180" lengthAdjust="spacingAndGlyphs">{order_id}</text>
+    <rect x="357" y="300" width="44" height="42" rx="5" fill="#ffe7c2"/>
+    <text x="216" y="331" class="path" textLength="144" lengthAdjust="spacingAndGlyphs">/orders/</text>
+    <text x="360" y="331" class="value" textLength="36" lengthAdjust="spacingAndGlyphs">42</text>
+  </g>
+  <path d="M378 248v42m-6-7 6 7 6-7" class="guide" stroke="#914512"/>
+  <text class="label" x="398" y="276" font-size="21">注文番号に置き換える</text>
+</svg>
