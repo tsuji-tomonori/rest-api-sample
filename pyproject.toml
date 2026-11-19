@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "修理依頼を題材に学ぶ REST API"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "alembic==1.16.5",
+    "alembic==1.20.1",
     "boto3==1.40.46",
     "fastapi==0.135.1",
     "mangum==0.19.0",
