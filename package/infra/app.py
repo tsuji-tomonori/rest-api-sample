@@ -16,6 +16,7 @@ from constructs import Construct
 class RepairApiStack(Stack):
     def __init__(self, scope: Construct, construct_id: str) -> None:
         super().__init__(scope, construct_id)
+        # 利用者の入口は API Gateway。Lambda と DB の通信には、インターネットへの経路を持たないサブネットを使う。
         vpc = ec2.Vpc(
             self, "Vpc", max_azs=2, nat_gateways=0,
             subnet_configuration=[ec2.SubnetConfiguration(
@@ -24,6 +25,8 @@ class RepairApiStack(Stack):
         )
         functions_sg = ec2.SecurityGroup(self, "FunctionsSG", vpc=vpc)
         endpoint_sg = ec2.SecurityGroup(self, "EndpointSG", vpc=vpc)
+        # Secrets Manager の接続口で、Lambda から届く HTTPS 通信（TCP 443）を許可する。
+        # プライベート DNS を有効にすると、SDK は通常のサービス名のまま、この接続口を使える。
         endpoint_sg.add_ingress_rule(functions_sg, ec2.Port.tcp(443))
         vpc.add_interface_endpoint(
             "SecretsEndpoint", service=ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
@@ -46,9 +49,11 @@ class RepairApiStack(Stack):
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
             removal_policy=RemovalPolicy.DESTROY, deletion_protection=False,
         )
+        # DB 側では Lambda からの PostgreSQL 接続（TCP 5432）を許可する。実行できる SQL は DB ユーザーの権限で決まる。
         cluster.connections.allow_default_port_from(functions_sg)
         api_secret = rds.DatabaseSecret(self, "ApiSecret", username="repair_api")
 
+        # 2つの Lambda は同じイメージを使う。handler が起動する関数を、secret が接続時に使う DB ユーザーを決める。
         def function(
             name: str, handler: str, secret: secretsmanager.ISecret, timeout: int,
         ) -> lambda_.DockerImageFunction:
@@ -74,18 +79,23 @@ class RepairApiStack(Stack):
             secret.grant_read(fn)
             return fn
 
+        # API は repair_api で依頼を読み書きする。マイグレーションは管理用ユーザーでテーブルと利用権限を用意する。
         api_handler = function("Api", "package.app.main.handler", api_secret, 28)
         migrate = function(
             "Migrate", "package.db.migrate.handler", cluster.secret, 120,
         )
+        # マイグレーションは repair_api のログインを設定するため、API 用の認証情報も読む。
         migrate.add_environment("DB_APP_SECRET_ARN", api_secret.secret_arn)
         api_secret.grant_read(migrate)
 
+        # 入口では IAM が利用者の署名と呼び出し権限を確認する。
+        # 次の区間で必要な「API Gateway が Lambda を呼ぶ権限」は HttpLambdaIntegration が設定する。
         gateway = apigw.HttpApi(
             self, "Gateway",
             default_authorizer=authorizers.HttpIamAuthorizer(),
             default_integration=integrations.HttpLambdaIntegration("FastAPI", api_handler),
         )
+        # デプロイ後に使う URL と関数名、利用者の IAM ポリシーで許可するルートの ARN を出力する。
         CfnOutput(self, "ApiUrl", value=gateway.api_endpoint)
         CfnOutput(self, "MigrateFunction", value=migrate.function_name)
         CfnOutput(

@@ -1,4 +1,4 @@
-"""Prepare the runtime account on the Aurora cluster using the migration connection."""
+"""移行用の接続を使い、Aurora に API 専用の利用者と権限を用意する。"""
 
 import json
 
@@ -18,7 +18,7 @@ def grant_api_access(connection: Connection, secret_arn: str) -> None:
         cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = 'repair_api'")
         if cursor.fetchone() is None:
             cursor.execute("CREATE ROLE repair_api LOGIN")
-        # libpq creates a verifier locally. The SQL sent to Aurora has no plaintext password.
+        # 平文のパスワードを SQL に含めず、接続ライブラリが計算した認証用の値を登録する。
         verifier = dbapi_connection.pgconn.encrypt_password(
             secret["password"].encode("utf-8"), b"repair_api", b"scram-sha-256"
         )
@@ -30,6 +30,7 @@ def grant_api_access(connection: Connection, secret_arn: str) -> None:
                 sql.Identifier(connection.engine.url.database)
             )
         )
+        # API は依頼の読み書きと受付番号の採番を担い、テーブル構造の変更は移行用の利用者が担う。
         cursor.execute("GRANT USAGE ON SCHEMA public TO repair_api")
         cursor.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON public.repair_requests TO repair_api")
         cursor.execute("GRANT USAGE ON SEQUENCE public.repair_requests_id_seq TO repair_api")

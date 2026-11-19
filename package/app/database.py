@@ -13,6 +13,7 @@ class Base(DeclarativeBase):
 
 
 class RepairRequest(Base):
+    # 修理依頼1件がテーブルの1行に対応する。SQLite でも削除した依頼の ID は再利用しない。
     __tablename__ = "repair_requests"
     __table_args__ = (
         CheckConstraint("status IN ('open', 'completed')", name="ck_repair_requests_status"),
@@ -26,11 +27,13 @@ class RepairRequest(Base):
 
 
 def database_url() -> URL:
+    # 手元では SQLite で始められる。別のデータベースで試すときは DATABASE_URL を指定する。
     if "DB_SECRET_ARN" not in os.environ:
         return make_url(os.getenv("DATABASE_URL", "sqlite:///./repairs.db"))
 
     import boto3
 
+    # AWS では Secrets Manager から認証情報を取得し、CDK が渡した Aurora の接続先と組み合わせる。
     secret = boto3.client("secretsmanager").get_secret_value(SecretId=os.environ["DB_SECRET_ARN"])
     credentials = json.loads(secret["SecretString"])
     return URL.create(
@@ -45,7 +48,8 @@ def database_url() -> URL:
 
 
 def session() -> Iterator[Session]:
-    # 教材では1回の要求で1接続を使い、終了時に閉じる。
+    # yield でセッションを渡し、処理が終わると with を抜ける。NullPool は使い終えた接続を閉じる。
     engine = create_engine(database_url(), poolclass=NullPool)
+    # 登録・更新を確定した後も、同じ行の値を使って応答を組み立てられる。
     with Session(engine, expire_on_commit=False) as db:
         yield db

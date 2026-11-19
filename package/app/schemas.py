@@ -11,6 +11,7 @@ ShortText = Annotated[
 RepairId = Annotated[int, Field(ge=1, le=2_147_483_647)]
 
 
+# 登録時に利用者が決めるのは件名と場所。余分な項目をエラーにすれば、入力欄の書き間違いも伝わる。
 class NewRepair(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -18,12 +19,14 @@ class NewRepair(BaseModel):
     location: ShortText
 
 
+# 更新時に受け取るのは状態だけなので、登録とは別の入力モデルを使う。
 class StatusChange(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: Status
 
 
+# 応答にはサーバーが決めた ID も載せる。from_attributes で保存した行の属性から値を読み取る。
 class Repair(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

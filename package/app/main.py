@@ -11,10 +11,12 @@ from .schemas import NewRepair, Repair, RepairId, RepairPage, Status, StatusChan
 
 app = FastAPI(title="修理依頼 API", version="1.0.0")
 configure_http(app)
+# 引数を db: DB と書いた関数には、FastAPI が session() から受け取ったセッションを渡す。
 DB = Annotated[Session, Depends(session)]
 NOT_FOUND = "修理依頼が見つかりません。"
 
 
+# POST /repair-requests をこの関数に結び付ける。FastAPI は本文を NewRepair で検証し、結果を Repair の形で返す。
 @app.post(
     "/repair-requests",
     status_code=201,
@@ -27,6 +29,7 @@ NOT_FOUND = "修理依頼が見つかりません。"
 def create_repair(data: NewRepair, response: Response, db: DB):
     repair = RepairRequest(**data.model_dump(), status="open")
     db.add(repair)
+    # 登録が確定したら、採番された ID から取得先のパスを作る。
     db.commit()
     response.headers["Location"] = f"/repair-requests/{repair.id}"
     return repair
@@ -44,6 +47,7 @@ def list_repairs(
         query = query.where(RepairRequest.status == status)
     if after is not None:
         query = query.where(RepairRequest.id > after)
+    # 1件多く読み、続きがあるかを調べる。次のページの起点は、今回返す最後の依頼の ID。
     rows = db.scalars(query.limit(limit + 1)).all()
     return {"items": rows[:limit], "next_after": rows[limit - 1].id if len(rows) > limit else None}
 
@@ -59,6 +63,7 @@ def get_repair(request_id: RepairId, db: DB):
 @app.patch("/repair-requests/{request_id}", response_model=Repair, responses=problems(400, 404, 415, 422))
 def update_status(request_id: RepairId, data: StatusChange, db: DB):
     statement = update(RepairRequest).where(RepairRequest.id == request_id).values(status=data.status)
+    # RETURNING は同じ更新命令で変更後の行を返す。対象があれば変更を確定してから応答する。
     repair = db.scalar(statement.returning(RepairRequest))
     if repair is None:
         raise HTTPException(404, NOT_FOUND)
@@ -75,4 +80,5 @@ def delete_repair(request_id: RepairId, db: DB):
     return Response(status_code=204)
 
 
+# Lambda の入口。Mangum が API Gateway のイベントを FastAPI に渡し、応答を Gateway 用の形式に戻す。
 handler = Mangum(app, lifespan="off")
