@@ -29,7 +29,7 @@ sequenceDiagram
 
 ## ファイルで渡す場合は何が変わるか
 
-同じ依頼を、依頼1件を1行にまとめ、行の中の項目をカンマで区切った CSV ファイルで渡すこともできます。たとえば、各支店がその日の依頼をまとめて夕方に送り、本部が翌朝読み込む運用です。ファイル連携を設計するときは、列の意味に加え、受け渡す時刻や、読み込み結果の伝え方も両者で決めます。[RFC 4180 §2 CSV の書式](https://www.rfc-editor.org/rfc/rfc4180.html#section-2)・[Hohpe・Woolf『Enterprise Integration Patterns』File Transfer](https://www.enterpriseintegrationpatterns.com/patterns/messaging/FileTransferIntegration.html)
+修理依頼は CSV ファイルでも渡せます。依頼1件を1行にまとめ、行の中の項目をカンマで区切ります。たとえば、各支店がその日の依頼をまとめて夕方に送り、本部が翌朝読み込む運用です。ファイル連携を設計するときは、列の意味に加え、受け渡す時刻や、読み込み結果の伝え方も両者で決めます。[RFC 4180 §2 CSV の書式](https://www.rfc-editor.org/rfc/rfc4180.html#section-2)・[Hohpe・Woolf『Enterprise Integration Patterns』File Transfer](https://www.enterpriseintegrationpatterns.com/patterns/messaging/FileTransferIntegration.html)
 
 | 業務で考えること | 夕方にまとめて渡す CSV の例 | 依頼のたびに呼ぶ HTTP API の例 |
 | --- | --- | --- |
@@ -38,5 +38,9 @@ sequenceDiagram
 | 失敗したときの手掛かり | ファイル名と行ごとの管理番号で受理済みの依頼を照合する | 応答が届かなければ登録結果が不明になる。再送の扱いを決めておく |
 
 月末の集計なら、対象月の全件を一度に渡せるファイルが扱いやすいでしょう。一方、椅子の修理を頼んだ社員は、席を離れる前に受付番号を知りたいはずです。そこで今回は、1件ずつ登録して結果を返す API を選びます。ファイルを届き次第取り込む運用や、API で複数件を受け付ける設計もあります。選ぶ手掛かりは、**誰が、いつ、どの単位で結果を必要とするか**です。
+
+## ここから自分の API を設計するには
+
+修理依頼では「受付番号で後から同じ依頼を開きたい」という希望から、依頼1件に番号が必要だと分かりました。別の業務でも、まず「利用者は何を後から探したり、変更したりするか」を一つ挙げてみてください。第2章からは、その対象に名前を付け、宛先と操作を決め、結果を返すところまでを順に設計します。第7章で設計を仕様書にし、第8・9章で修理依頼の実装例を読みます。
 
 [目次](../README.md) ・ [次へ　REST とリソース](02-rest.md)

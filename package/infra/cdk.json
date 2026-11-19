@@ -1,5 +1,5 @@
 {
-  "app": "python app.py",
+  "app": "uv run --locked --group infra python app.py",
   "context": {
     "auroraVersion": "17.7"
   }
