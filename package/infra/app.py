@@ -1,11 +1,12 @@
 from pathlib import Path
 
-from aws_cdk import App, CfnOutput, Duration, IgnoreMode, RemovalPolicy, Stack
+from aws_cdk import App, CfnCondition, CfnOutput, CfnParameter, Duration, Fn, IgnoreMode, RemovalPolicy, Stack
 from aws_cdk import aws_apigatewayv2 as apigw
 from aws_cdk import aws_apigatewayv2_authorizers as authorizers
 from aws_cdk import aws_apigatewayv2_integrations as integrations
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr_assets as ecr_assets
+from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 from aws_cdk import aws_logs as logs
 from aws_cdk import aws_rds as rds
@@ -95,14 +96,28 @@ class RepairApiStack(Stack):
             default_authorizer=authorizers.HttpIamAuthorizer(),
             default_integration=integrations.HttpLambdaIntegration("FastAPI", api_handler),
         )
+        invoke_arn = f"arn:{self.partition}:execute-api:{self.region}:{self.account}:{gateway.api_id}/*/$default"
+        # 自動配信時は、作成した関数と API に限ってデプロイ後の確認を許可する。
+        deploy_role = CfnParameter(
+            self, "DeploymentRoleName", type="String", default="",
+            allowed_pattern=r"^$|^[a-zA-Z0-9+=,.@_-]{1,64}$",
+        )
+        post_deploy_policy = iam.CfnPolicy(
+            self, "PostDeployPolicy",
+            roles=[deploy_role.value_as_string],
+            policy_name="RepairApiPostDeploy",
+            policy_document=iam.PolicyDocument(statements=[
+                iam.PolicyStatement(actions=["lambda:InvokeFunction"], resources=[migrate.function_arn]),
+                iam.PolicyStatement(actions=["execute-api:Invoke"], resources=[invoke_arn]),
+            ]).to_json(),
+        )
+        post_deploy_policy.cfn_options.condition = CfnCondition(
+            self, "UseDeploymentRole", expression=Fn.condition_not(Fn.condition_equals(deploy_role.value_as_string, "")),
+        )
         # デプロイ後に使う URL と関数名、利用者の IAM ポリシーで許可するルートの ARN を出力する。
         CfnOutput(self, "ApiUrl", value=gateway.api_endpoint)
         CfnOutput(self, "MigrateFunction", value=migrate.function_name)
-        CfnOutput(
-            self, "InvokeArn",
-            value=f"arn:{self.partition}:execute-api:{self.region}:{self.account}:"
-                  f"{gateway.api_id}/*/$default",
-        )
+        CfnOutput(self, "InvokeArn", value=invoke_arn)
 
 
 app = App()

@@ -1,3 +1,5 @@
+"""FastAPI と SQLite の結合テスト。各テストで新しい DB にマイグレーションを適用する。"""
+
 import asyncio
 import json
 

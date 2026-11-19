@@ -51,4 +51,6 @@ uv run --locked uvicorn package.app.main:app
 
 `201` と `status: open` が返り、ヘッダーの `Location` の末尾が本文の `id` と一致すれば、依頼の登録に成功しています。
 
+PostgreSQL と組み合わせて動かしたいときや、変更後にどのテストを実行するかを決めるときは、アプリの README を使ってください。[ローカル起動とテストの手順](../package/app/README.md)
+
 [前へ　OpenAPI で契約を表す](07-openapi.md) ・ [目次](../README.md) ・ [次へ　AWS に配置する](09-aws.md)
