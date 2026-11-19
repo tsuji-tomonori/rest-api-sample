@@ -1,4 +1,4 @@
-"""第7章の仕様書は抜粋。掲載した項目が配布 YAML と食い違ったら知らせる。"""
+"""実例編第7章の仕様書は抜粋。掲載した項目が配布 YAML と食い違ったら知らせる。"""
 
 import re
 from pathlib import Path
@@ -23,7 +23,7 @@ def assert_excerpt(example, published, path=""):
 
 
 def test_chapter_seven_yaml_matches_the_published_operations_and_schemas():
-    chapter = (DOCS / "07-openapi.md").read_text(encoding="utf-8")
+    chapter = (DOCS / "examples" / "07-openapi.md").read_text(encoding="utf-8")
     published = yaml.safe_load((DOCS / "openapi.yaml").read_text(encoding="utf-8"))
     snippets = re.findall(r"^```yaml\n(.*?)^```$", chapter, re.MULTILINE | re.DOTALL)
     assert snippets, "第7章の YAML の抜粋が見つかりません"

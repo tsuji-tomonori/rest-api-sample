@@ -4,7 +4,7 @@
 
 ## PostgreSQL を使って1件登録する
 
-**サンプルで試せる**　Docker と Docker Compose v2 を用意します。以下のコマンドはすべてリポジトリのルートで実行します。Compose は PostgreSQL を起動し、マイグレーションでテーブルを作ってから API を起動します。
+Docker と Docker Compose v2 を用意し、リポジトリのルートで実行します。Compose は PostgreSQL を起動し、マイグレーションでテーブルを作ってから API を起動します。
 
 ```console
 docker compose up --build --wait api
@@ -14,11 +14,11 @@ docker compose up --build --wait api
 2. **Execute** で送信します。**Server response** に `201`、本文に `id` と `"status":"open"` が表示されます。レスポンスヘッダー `location` が `/repair-requests/42` なら、新しい依頼の受付番号は `42` です。
 3. `GET /repair-requests/{request_id}` の **Try it out** で実際の番号を入力し、**Execute** を押します。`200` と先ほどの内容が返れば、登録した依頼を読み出せました。
 
-Swagger UI は、起動中の API の `/openapi.json` から操作や入力欄を読み込みます。リポジトリで配布する仕様書は `docs/openapi.yaml` です。画面の表示に必要なファイルは、FastAPI の既定の配信元（CDN）からブラウザーが取得します。Docker を使わずに始める場合は、SQLite を使う [FastAPI の起動手順](../../docs/09-fastapi.md) があります。
+Swagger UI は、起動中の API の `/openapi.json` から操作や入力欄を読み込みます。リポジトリで配布する仕様書は `docs/openapi.yaml` です。画面の表示に必要なファイルは、FastAPI の既定の配信元（CDN）からブラウザーが取得します。Docker を使わずに始める場合は、SQLite を使う [FastAPI の起動手順](../../docs/build/fastapi.md) があります。
 
 ## 設計した操作を実装する
 
-たとえば登録の仕様を変えるなら、設計シートで「保存後に利用者ができること」を決め、公開 YAML の `createRepair` で現在の入力とレスポンスを確認します。変更内容に合わせて、次のファイルを編集します。[設計シートの記入例](../../docs/06-contract.md)・[仕様書から登録処理を読む](../../docs/09-fastapi.md)
+たとえば登録の仕様を変えるなら、設計シートで「保存後に利用者ができること」を決め、公開 YAML の `createRepair` で現在の入力とレスポンスを確認します。変更内容に合わせて、次のファイルを編集します。[設計シートの記入例](../../docs/examples/06-contract.md)・[仕様書から登録処理を読む](../../docs/build/fastapi.md)
 
 | 変更内容 | 対応する場所 |
 | --- | --- |
@@ -50,7 +50,7 @@ uv run --locked ruff check package scripts tests
 uv run --locked --group infra mypy
 ```
 
-HTTP と PostgreSQL まで通して確認するときは、冒頭の Compose コマンドをもう一度実行し、変更後の API を起動します。次の1行目は業務フローを、2行目は公開 YAML に載せた例と実際のレスポンスを確かめます。検証項目の選び方と各テストの範囲は第11章にまとめています。[第11章　API のテストを組み立てる](../../docs/11-testing.md)
+HTTP と PostgreSQL まで通して確認するときは、冒頭の Compose コマンドをもう一度実行し、変更後の API を起動します。次の1行目は業務フローを、2行目は公開 YAML に載せた例と実際のレスポンスを確かめます。[API のテストを組み立てる](../../docs/build/testing.md)
 
 ```console
 docker compose run --rm integration
@@ -61,12 +61,12 @@ uv run --locked --group contract python tests/contract/check.py
 
 ## 構築・運用へ引き継ぐ
 
-GitHub の **Verify sample** は、push とプルリクエストでテストを繰り返し、公開 YAML が現在のコードから生成できることも調べます。コードと仕様書の変更を一緒にレビューすると、利用者への影響を確認できます。[検証ワークフロー](../../.github/workflows/verify.yml)・[第13章　API のバージョンを上げる](../../docs/13-versioning.md)
+GitHub の **Verify sample** は、push とプルリクエストでテストを繰り返し、公開 YAML が現在のコードから生成できることも調べます。コードと仕様書の変更を一緒にレビューすると、利用者への影響を確認できます。[検証ワークフロー](../../.github/workflows/verify.yml)・[教科書08　互換性](../../docs/textbook/08-compatibility.md)
 
-AWS の構成と配置手順は第10章、デプロイ後の疎通結果や障害時の確認は第12章で扱います。[第10章　AWS での構築](../../docs/10-aws.md)・[インフラの README](../infra/README.md)・[第12章　API の運用と監視を始める](../../docs/12-operations.md)
+構築時は接続と権限を確認し、公開後は疎通結果と実行ログを調べます。[AWS での構築](../../docs/build/aws.md)・[インフラの README](../infra/README.md)・[API の運用と監視](../../docs/build/operations.md)
 
 ## 実装時の参照先
 
-- 仕様を読み、入力例を追加する。[OpenAPI の書き方](../../docs/07-openapi.md)・[仕様書の生成コード](export_openapi.py)・[FastAPI の名前付き入力例](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter)
+- 仕様を読み、入力例を追加する。[OpenAPI の書き方](../../docs/textbook/07-openapi.md)・[仕様書の生成コード](export_openapi.py)・[FastAPI の名前付き入力例](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter)
 - 入力と保存結果をテストする。[単体テスト](../../tests/unit)・[FastAPI と SQLite](../../tests/test_api.py)・[HTTP と PostgreSQL](../../tests/integration/test_repair_workflow.py)・[公開 YAML の契約テスト](../../tests/contract/check.py)
 - Swagger UI の画面を表示するためのファイルを確認する。[FastAPI の画面用ファイル](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/)

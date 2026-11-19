@@ -20,7 +20,7 @@ uv run --locked --group infra python -m pytest -q tests/infra
 
 アサーションは守りたい条件を確かめます。スナップショットは、IAM ポリシーやネットワークを含むテンプレート全体の変更に気付くために使います。意図した構成変更では、手元で環境変数 `UPDATE_CDK_SNAPSHOT=1` を設定してテストを実行し、解除してから再実行します。PR では YAML の差分と費用・権限への影響を一緒に確認します。[検査コード](../../tests/infra/test_stack.py)・[CDK 公式のテスト手法](https://docs.aws.amazon.com/cdk/v2/guide/testing.html)・[cdk-nag](https://github.com/cdklabs/cdk-nag)・[PrivateLink の料金](https://aws.amazon.com/privatelink/pricing/)
 
-第10章で組み立てた API Gateway、Lambda、Aurora を AWS に配置します。手元から構築するときは「スタックを作成する」から、GitHub から自動配信するときは「GitHub Actions から継続的にデプロイする」から読みます。どちらも、スタックを適用し、DB を移行してから、公開 URL で一覧を取得する流れです。[構成と接続設定](../../docs/10-aws.md)
+修理依頼を受け付ける API Gateway、Lambda、Aurora を AWS に配置します。手元から構築するときは「スタックを作成する」から、GitHub から自動配信するときは「GitHub Actions から継続的にデプロイする」から読みます。どちらも、スタックを適用し、DB を移行してから、公開 URL で一覧を取得する流れです。[構成と接続設定](../../docs/build/aws.md)
 
 ## スタックを作成する
 
@@ -113,9 +113,9 @@ uv run --locked python -m package.infra.post_deploy package/infra/cdk.out/repair
 
 ## 運用担当に引き継ぐ
 
-対象の AWS アカウント・リージョン、スタック名 `RepairApi`、公開 URL、配信したコミット、直近の疎通結果を共有します。疎通結果にあるのはデプロイ時点の記録です。業務フローや OpenAPI 契約の判定基準は第11章で確認できます。[第11章　API のテストを組み立てる](../../docs/11-testing.md)
+対象の AWS アカウント・リージョン、スタック名 `RepairApi`、公開 URL、配信したコミット、直近の疎通結果を共有します。疎通結果にあるのはデプロイ時点の記録です。[業務フローと契約のテスト](../../docs/build/testing.md)
 
-障害調査には CloudFormation のスタックの「リソース」から、API 用・移行用 Lambda をたどれます。各関数の「モニタリング」から実行ログを開きます。CDK は関数ごとにロググループを作り、7日間保存します。稼働中に追うメトリクスと通知の設計、次のバージョンへ切り替えるときの判断は、運用の章で説明します。[第12章　API の運用と監視を始める](../../docs/12-operations.md)・[第13章　API のバージョンを上げる](../../docs/13-versioning.md)
+障害調査には CloudFormation のスタックの「リソース」から、API 用・移行用 Lambda をたどれます。各関数の「モニタリング」から実行ログを開きます。CDK は関数ごとにロググループを作り、7日間保存します。運用ガイドではメトリクスと通知を、教科書では公開済み API の互換性を扱います。[API の運用と監視](../../docs/build/operations.md)・[互換性とバージョン](../../docs/textbook/08-compatibility.md)
 
 ## 検証環境の利用を終える
 

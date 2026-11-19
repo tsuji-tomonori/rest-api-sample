@@ -1,4 +1,4 @@
-# 第12章　API の運用と監視を始める
+# 公開した API を監視し、障害に対応する
 
 朝の受付で「修理依頼を送ったのに、受付番号が出ない」と連絡がありました。当番が最初に知りたいのは、登録だけが止まっているのか、すでに登録した依頼も開けないのかです。監視を設計するときも、利用者が済ませたい操作から考えます。
 
@@ -6,7 +6,7 @@
 
 修理依頼なら、登録の成功は `POST` が `201` を返し、`Location` でその依頼を開けることです。一覧の成功は、権限のある社員に `200` と一覧が返ることです。1件も登録されていなければ、空の一覧が正常です。受付時間と、社員が許容できる待ち時間を業務担当者と決めておくと、どの遅延を当番に知らせるか判断できます。
 
-**サンプルで試せる**　デプロイ直後の疎通確認では、署名なしの一覧取得で `403` が返ることを確かめます。次に、同じロールでリクエストごとに署名し、`limit=1` で `200`、`limit=0` で `422` が返ることを確認します。登録から取得までの業務の流れは、CI でテスト用の PostgreSQL に対して別に確認しています。
+デプロイ直後の疎通確認では、署名なしの一覧取得で `403` が返ることを確かめます。次に、同じロールでリクエストごとに署名し、`limit=1` で `200`、`limit=0` で `422` が返ることを確認します。登録から取得までの業務の流れは、CI でテスト用の PostgreSQL に対して別に確認しています。
 
 結果は GitHub Actions の `aws-smoke.json` に残ります。デプロイ先が未設定でもレポートは作られ、その場合、全体の `status` は `not_run` です。実環境で成功したかは、`checks` 内で該当する検査の `status` が `passed` かを読みます。`attempts` で実際の試行回数も分かります。
 
@@ -25,7 +25,7 @@ AWS の製品名に注意しましょう。この教材は API Gateway の **HTT
 
 ## 当番をいつ呼ぶか
 
-**設計例（未実装）**　サーバーエラーを早く見つけるなら、`5xx` の統計を合計（`Sum`）、集計期間を5分にします。たとえば「3件以上の区間が直近3区間中2区間ある」ときにアラームを上げます。1分間に数百件の API と1日に数件の API では、同じ3件でも影響が違います。実際の件数と問い合わせを見て、条件を調整します。
+サンプルにアラームを追加してサーバーエラーを早く見つけるなら、`5xx` の統計を合計（`Sum`）、集計期間を5分にします。たとえば「3件以上の区間が直近3区間中2区間ある」ときにアラームを上げます。1分間に数百件の API と1日に数件の API では、同じ3件でも影響が違います。実際の件数と問い合わせを見て、条件を調整します。
 
 「受付時間には一覧を開ける」を数値で確かめるなら、直近30日間の受付時間を対象に、予定した定期照会のうち `200` と正しい一覧が返った割合を求めます。この測定値が**サービスレベル指標（SLI）**、「その割合を99%以上に保つ」が**サービスレベル目標（SLO）**の例です。ここで測れるのは監視用ロールからの読み取りです。待ち時間を調べるには、実際の利用者からの呼び出しが十分ある時間帯に、95% のリクエストが収まる時間（p95）を業務上の許容値と比べます。
 
@@ -46,7 +46,7 @@ AWS の製品名に注意しましょう。この教材は API Gateway の **HTT
 
 ### アクセスログから失敗した1件を探す
 
-**設計例（未実装）**　CloudWatch Logs に専用のロググループを作り、HTTP API の `$default` ステージの `AccessLogSettings` に設定します。`DestinationArn` には作成したロググループの ARN（AWS 内のリソースを示す名前）、`Format` には、たとえば次の JSON を指定します。
+アクセスログを追加する場合は、CloudWatch Logs に専用のロググループを作り、HTTP API の `$default` ステージの `AccessLogSettings` に設定します。`DestinationArn` には作成したロググループの ARN（AWS 内のリソースを示す名前）、`Format` には、たとえば次の JSON を指定します。
 
 ```json
 {"time":"$context.requestTime","requestId":"$context.requestId","method":"$context.httpMethod","status":"$context.status","latencyMs":"$context.responseLatency"}
@@ -64,20 +64,6 @@ AWS の製品名に注意しましょう。この教材は API Gateway の **HTT
 
 誤削除からの復旧は平時に点検します。教材の DB は `RemovalPolicy.DESTROY`、`deletion_protection=False` で、スタックを削除すると DB も削除されます。業務で使う場合は削除保護とバックアップの保持日数を決め、実際に戻せる最古・最新の時刻を確認します。復元テストでは、誤削除前の時刻を指定して別のクラスターを作り、検証用 API から復元先に接続して、必要な依頼が読めることまで確かめます。
 
-## 脆弱性の通知が届いたら
-
-サンプルの CI は変更時と毎週、ロックした Python パッケージを既知の脆弱性と照合します。検知したら、担当者はまずパッケージ名・現在の版・修正版・アドバイザリを確認します。たとえば CDK は構築時、pytest はテスト時、FastAPI はリクエスト処理中に使います。どこで使うかを調べると、どの環境を優先して更新するか判断できます。
-
-直接指定した版は `pyproject.toml` を直して `uv lock` を実行します。間接依存なら `uv lock --upgrade-package パッケージ名` で対象を更新します。ロックファイルを一緒にレビューし、再監査と契約テストを通します。実行用ライブラリを更新したら、新しいイメージを配信して疎通を確認するまでを対応に含めます。修正版がまだない場合は、影響する機能、暫定対策、担当者、再確認日を記録します。[pip-audit](https://github.com/pypa/pip-audit)・[インフラの検査手順](../package/infra/README.md)
-
-配布用 Lambda イメージについても、CI で Trivy が OS とライブラリを検査します。修正版がある高・緊急（HIGH・CRITICAL）の指摘があると配信を止めます。ベースイメージに原因がある場合は修正を含む版からビルドし直し、実際に配信するイメージで再検査します。[Trivy のコンテナイメージ検査](https://trivy.dev/docs/latest/target/container_image/)
-
-## この章で決めたこと
-
-- 業務の成功条件を先に決め、入口の HTTP レスポンスから Lambda、DB の順に同じ時間帯を調べる。
-- 通知の条件、欠測時の扱い、受け取る担当者、最初の確認をセットで決める。
-- 障害を受けた操作をもう一度確かめて復旧を伝え、テストや運用手順に結果を反映する。
-
 ## 根拠と参考
 
 - **利用者の目標と当番の判断**　[Google SRE のサービスレベル目標](https://sre.google/sre-book/service-level-objectives/)・[AWS Well-Architected の運用](https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/operate.html)
@@ -87,6 +73,6 @@ AWS の製品名に注意しましょう。この教材は API Gateway の **HTT
 - **通知**　[CloudWatch アラームの評価](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/alarm-evaluation.html)・[欠測の扱い](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/alarms-and-missing-data.html)・[アラームから実行するアクション](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Alarms.html)
 - **アクセスログ**　[HTTP API ステージの設定](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-apigatewayv2-stage-accesslogsettings.html)・[指定できるログ項目](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-logging-variables.html)・[Logs Insights の filter](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_QuerySyntax-Filter.html)
 - **記録と対応**　[Python Lambda のログ](https://docs.aws.amazon.com/lambda/latest/dg/python-logging.html)・[CloudWatch 料金](https://aws.amazon.com/cloudwatch/pricing/)・[AWS の障害後レビュー](https://docs.aws.amazon.com/wellarchitected/latest/framework/rel12-bp02.html)
-- **サンプルの設定**　[CDK](../package/infra/app.py)・[デプロイ後の疎通確認と再実行方法](../package/infra/README.md)・[第10章の AWS 構成](10-aws.md)・[第11章のテスト](11-testing.md)
+- **サンプルの設定**　[CDK](../../package/infra/app.py)・[デプロイ後の疎通確認と再実行方法](../../package/infra/README.md)・[AWS の構成](aws.md)・[API のテスト](testing.md)
 
-[前へ　第11章　API のテストを組み立てる](11-testing.md) ｜ [目次](../README.md) ｜ [次へ　第13章　API のバージョンを上げる](13-versioning.md)
+[AWS の構成](aws.md) ｜ [旧版と新版の並行稼働](version-rollout.md) ｜ [教材の目次](../../README.md)

@@ -1,10 +1,10 @@
-# 第9章　仕様書の約束を FastAPI で実装する
+# 仕様書の約束を FastAPI で実装する
 
-開発に取りかかるときは、設計シートと公開する仕様書を並べます。修理依頼の設計シートにあるのは「登録した社員が、後から同じ依頼を開ける」という約束です。仕様書で登録操作の `createRepair` を探すと、その約束を確かめる手がかりが見つかります。件名と場所を送ると `201` が返り、レスポンスヘッダーの `Location` に取得先が入ります。ここまでを、登録機能の完成条件にしましょう。[第6章の設計シート](06-contract.md)・[第7章の仕様書の読み方](07-openapi.md)・[公開仕様書（YAML）](openapi.yaml)
+開発に取りかかるときは、設計シートと公開する仕様書を並べます。修理依頼の設計シートにあるのは「登録した社員が、後から同じ依頼を開ける」という約束です。仕様書で登録操作の `createRepair` を探すと、その約束を確かめる手がかりが見つかります。件名と場所を送ると `201` が返り、レスポンスヘッダーの `Location` に取得先が入ります。ここまでを、登録機能の完成条件にしましょう。[修理依頼の操作をまとめた実例](../examples/06-contract.md)・[修理依頼の仕様書への転記](../examples/07-openapi.md)・[公開仕様書（YAML）](../openapi.yaml)
 
 ## 登録の条件を関数に書く
 
-**サンプルで試せる**　登録を担当するのは `create_repair` 関数です。関数の手前にある `@app.post(...)` は、「このパスに `POST` が届いたら、この関数を呼ぶ」という指定です。Python ではこうした書き方をデコレーターと呼びます。
+登録を担当するのは `create_repair` 関数です。関数の手前にある `@app.post(...)` は、「このパスに `POST` が届いたら、この関数を呼ぶ」という指定です。Python ではこうした書き方をデコレーターと呼びます。
 
 | 仕様書に書いた約束 | Python で対応する部分 |
 | --- | --- |
@@ -52,7 +52,7 @@ git diff -- docs/openapi.yaml
 uv run --locked python -m pytest -q tests/unit tests/test_api.py
 ```
 
-たとえば件名の入力条件を直したら、単体テストで空白や文字数の境界を確かめます。結合テストでは、実際に FastAPI が入力を拒んだとき、テスト用 SQLite に依頼が増えないことまで調べます。どちらも API サーバーを起動せず、変更のたびに手元で実行できます。GitHub に変更を送ると、CI（継続的インテグレーション）が同じ検証を繰り返し、PostgreSQL を使う業務フローも確かめます。[第11章　API のテストを組み立てる](11-testing.md)・[CI の実行内容](../.github/workflows/verify.yml)
+たとえば件名の入力条件を直したら、単体テストで空白や文字数の境界を確かめます。結合テストでは、実際に FastAPI が入力を拒んだとき、テスト用 SQLite に依頼が増えないことまで調べます。どちらも API サーバーを起動せず、変更のたびに手元で実行できます。GitHub に変更を送ると、CI（継続的インテグレーション）が同じ検証を繰り返し、PostgreSQL を使う業務フローも確かめます。[API のテスト](testing.md)・[CI の実行内容](../../.github/workflows/verify.yml)
 
 ## 1件登録し、仕様書に書いた宛先を開く
 
@@ -73,18 +73,12 @@ uv run --locked uvicorn package.app.main:app
 
 ## AWS の構築へ引き継ぐ
 
-構築担当者に渡すのは、テストが通ったコードと、そのコードから生成した仕様書です。修理依頼を保存するには、実行環境の DB にテーブルも必要です。第10章では、同じアプリを Lambda で動かし、マイグレーションで Aurora にテーブルを用意します。手元で確かめた登録と照会は、AWS に配置した後も同じメソッドとパスで呼び出せます。[Lambda の入口](../package/app/main.py)・[DB のマイグレーション](../package/db/migrate.py)・[第10章　AWS での構築](10-aws.md)
-
-## この章で決めたこと
-
-- 登録には件名と場所を受け取り、取得先を示す `Location` は保存後の受付番号から作る。
-- 変更したら公開 YAML の差分を読み、手元のテストで登録と照会が設計どおりか確かめる。
-- AWS へは、検証したコードと仕様書、台帳を用意するマイグレーションを一緒に渡す。
+構築担当者に渡すのは、テストが通ったコードと、そのコードから生成した仕様書です。修理依頼を保存するには、実行環境の DB にテーブルも必要です。AWS では同じアプリを Lambda で動かし、マイグレーションで Aurora にテーブルを用意します。手元で確かめた登録と照会は、AWS に配置した後も同じメソッドとパスで呼び出せます。[Lambda の入口](../../package/app/main.py)・[DB のマイグレーション](../../package/db/migrate.py)・[AWS での構築](aws.md)
 
 ## 根拠と参考
 
 - FastAPI の本文、パスとクエリの扱い、レスポンスの組み立て方。[Request Body](https://fastapi.tiangolo.com/tutorial/body/)・[Response Model](https://fastapi.tiangolo.com/tutorial/response-model/)・[Response Headers](https://fastapi.tiangolo.com/advanced/response-headers/)
 - DB への保存と確定、実行環境の準備。[SQLAlchemy Session Basics](https://docs.sqlalchemy.org/en/20/orm/session_basics.html)・[uv の環境同期](https://docs.astral.sh/uv/concepts/projects/sync/)
-- このサンプルのコードと検証手順。[ルートと保存処理](../package/app/main.py)・[入出力の型](../package/app/schemas.py)・[登録後に取得するテスト](../tests/test_api.py)・[PostgreSQL での起動とテスト](../package/app/README.md)
+- このサンプルのコードと検証手順。[ルートと保存処理](../../package/app/main.py)・[入出力の型](../../package/app/schemas.py)・[登録後に取得するテスト](../../tests/test_api.py)・[PostgreSQL での起動とテスト](../../package/app/README.md)
 
-[前へ　第8章　会議室の予約なら、何が変わるか](08-practice.md) ｜ [目次](../README.md) ｜ [次へ　第10章　設計した API を AWS で動かす](10-aws.md)
+[修理依頼の設計](../examples/06-contract.md) ｜ [API のテスト](testing.md) ｜ [教材の目次](../../README.md)

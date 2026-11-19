@@ -1,0 +1,33 @@
+openapi: 3.1.0
+info:
+  title: 備品台帳 API
+  version: 1.0.0
+paths:
+  /items/{item_id}:
+    get:
+      summary: 備品を1件取得する
+      operationId: getItem
+      parameters:
+        - in: path
+          name: item_id
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 42
+      responses:
+        '200':
+          description: 指定した番号の備品を返す
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, name]
+                properties:
+                  id: {type: integer, minimum: 1}
+                  name: {type: string}
+              example: {id: 42, name: プロジェクター}
+        '400':
+          description: 番号が1以上の整数ではない
+        '404':
+          description: その番号の備品が見つからない
