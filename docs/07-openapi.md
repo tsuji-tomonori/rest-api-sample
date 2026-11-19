@@ -103,6 +103,8 @@ components:
 
 サンプルでは Python の型と FastAPI のルート定義から [openapi.json](openapi.json) を生成しています。ファイルの `openapi: 3.1.0` は設計書を読むための規格の版です。`info.version: 1.0.0` はこの設計書に付けた版で、FastAPI の `version` に設定しています。どちらの値もリクエストのパスを変えません。[OpenAPI の OpenAPI Object](https://spec.openapis.org/oas/v3.1.1.html#openapi-object)・[Info Object](https://spec.openapis.org/oas/v3.1.1.html#info-object)・[FastAPI のメタデータ](https://fastapi.tiangolo.com/tutorial/metadata/)
 
+公開後に設計書を更新するときは、変更前の定義と比べます。たとえば登録の必須項目が一つ増えると、これまで件名と場所だけを送っていた画面からは登録できなくなります。このような変更をどう公開するかは、第11章で判断します。[第11章　API のバージョンを上げる](11-versioning.md)
+
 uv を使い、リポジトリのルートで次のコマンドを実行します。上の行は仕様書を更新し、下の行は保存済みの内容と実装が一致するかを確認します。どちらも `app.openapi()` を呼ぶので、Web サーバーの起動や DB 接続は不要です。[生成コマンドの実装](../package/app/export_openapi.py)・[FastAPI の OpenAPI 生成](https://fastapi.tiangolo.com/how-to/extending-openapi/)
 
 ```console

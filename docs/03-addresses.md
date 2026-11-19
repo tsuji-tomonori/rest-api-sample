@@ -16,6 +16,8 @@ HTTP では、**URI（Uniform Resource Identifier）** で対象を識別しま�
 
 集合を複数形にすると、名前から「注文の集まり」と分かります。修理依頼の `/repair-requests` のように、固定の英単語は小文字でそろえ、単語の境目をハイフンで示すと、読み手が綴りを予測しやすくなります。これは教材で選ぶ**命名規約**です。RFC 3986 は URI の構文を定めます。集合名の単数・複数や英単語の区切り方は、API ごとに決められます。[RFC 3986 §3.3](https://www.rfc-editor.org/rfc/rfc3986.html#section-3.3)・[Zalando のパス命名規約](https://opensource.zalando.com/restful-api-guidelines/#129)・[Microsoft のリソース設計指針](https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design#define-restful-web-api-resource-uris)・[OpenAPI のパスの書き方](https://spec.openapis.org/oas/v3.1.1.html#path-templating)
 
+利用者がパスで API の版を選ぶ設計もあります。たとえば `/v1/orders/42` なら、`v1` が利用する契約の版、`42` が注文番号です。この教材の修理依頼 API では `/repair-requests` を使います。番号の付け方と、新しい版を設ける判断は第11章で扱います。[Google AIP-185 のバージョン規約](https://google.aip.dev/185#guidance)・[第11章　API のバージョンを上げる](11-versioning.md)
+
 **動詞を付けたくなったら、操作後に何をたどりたいか**を考えてみてください。「注文を取り消す」だけなら、注文の状態を変更する方法があります。取消理由や承認結果を後から読むなら、`/orders/42/cancellation-requests` に取消申請を登録するほうが、経過を追いやすくなります。標準の操作では固有の手続きを表しにくい場合に、独自の操作名を許す設計指針もあります。たとえば Google は、その場合の表記として `:archive` のような接尾辞を定めています。[Google AIP-136 Custom methods](https://google.aip.dev/136#guidance)
 
 階層は、利用者が知っている番号で目的の対象を指せるところまでにします。HTTP には「3階層まで」といった決まりも、URI の長さの一律の上限もありません。RFC 9110 の **8,000オクテット（バイト）** は、送受信する側が少なくともその長さの URI を扱えるようにするための推奨値です。実際に通せる長さはサーバーや中継機器の制限によります。対象の URI が受け付けられる長さを超えた場合の応答は `414 URI Too Long` です。[RFC 9110 §4.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-4.1)・[§15.5.15](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.15)

@@ -34,6 +34,8 @@ default_integration=integrations.HttpLambdaIntegration("FastAPI", api_handler),
 
 API Gateway はメソッド、パス、ヘッダー、本文を、ペイロード形式 2.0 のイベントにまとめます。Lambda の入口は `package.app.main.handler` です。ここで `Mangum(app, lifespan="off")` がイベントを FastAPI が扱える形式へ変換します。あとは FastAPI が `@app.post("/repair-requests")` の関数を選びます。戻り道では、Mangum が FastAPI の応答を API Gateway 向けに変換します。[イベントの形式](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html) ／ [Mangum](https://mangum.fastapiexpert.com/)
 
+**ステージ**は、API Gateway の設定をデプロイする公開先です。このサンプルの `$default` ステージには、URL にステージ名を足さず、`/repair-requests` でアクセスできます。一方、利用者に `/v1` と `/v2` を選んでもらう場合は、各パスでどの契約を提供するかを決めます。[AWS「HTTP API のステージ」](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-stages.html)・[第11章　API のバージョンを上げる](11-versioning.md)
+
 ## Lambda から保存先までをつなぐ
 
 データベースには公開 IP アドレスを割り当てず、Lambda から AWS 内の仮想ネットワーク **VPC** を通して接続します。1件の登録には、次の3つがそろう必要があります。[Lambda の VPC 接続](https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html)
