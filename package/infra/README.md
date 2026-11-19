@@ -2,6 +2,8 @@
 
 ## 配置前にセキュリティと費用を確認する
 
+CI は Python の依存監査に加え、CDK のビルド対象から作った Lambda イメージも Trivy で検査します。Amazon Linux の更新では [公式リリースノート](https://docs.aws.amazon.com/linux/al2023/release-notes/)で修正版を確認し、`Dockerfile` の `AL2023_RELEASE` を更新します。ファイルの変更が CDK のイメージ資産にも反映されます。ローカルでの業務テストには Compose の `local` ステージを使います。配布イメージからはローカル専用 Lambda エミュレーターを除いています。
+
 リポジトリのルートで次を実行すると、AWS にリソースを作らずに CloudFormation テンプレートを検査できます。
 
 ```console

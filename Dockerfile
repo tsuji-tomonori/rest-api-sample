@@ -1,6 +1,7 @@
 FROM public.ecr.aws/lambda/python:3.12 AS runtime
 # ベースの公開後に修正された Amazon Linux 2023 のパッケージも取り込む。
-RUN dnf --releasever=latest upgrade -y && dnf clean all
+ARG AL2023_RELEASE=2023.12.20261112
+RUN dnf --releasever=${AL2023_RELEASE} upgrade -y && dnf clean all
 
 # uv.lock に記録した依存パッケージをここで準備し、実行用イメージにコピーする。
 FROM runtime AS dependencies
