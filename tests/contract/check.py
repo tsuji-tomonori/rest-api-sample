@@ -1,4 +1,4 @@
-"""Check the running Compose API against the OpenAPI document shipped with the guide."""
+"""Compose で動いている API の応答を、教材で公開する OpenAPI 定義と照合する。"""
 
 import re
 from pathlib import Path
@@ -54,14 +54,14 @@ def check_api(session, contract):
         assert created.json() == repair
         assert call("GET", DETAIL, 200, request_id=repair_id).json() == repair
 
-        # Read our own row on both a fresh database and one containing older repairs.
+        # 手動で登録した依頼がすでにあっても、このテストの1件から一覧を読み始める。
         params = {"status": "open", "limit": 1}
         if repair_id > 1:
             params["after"] = repair_id - 1
         page = call("GET", COLLECTION, 200, params=params).json()
         assert page["items"] == [repair]
 
-        # Generate the status from this operation's OpenAPI enum. Every update uses our own ID.
+        # 契約に列挙された状態から更新値を作り、先ほど登録した依頼だけを変更する。
         changes = contract[DETAIL]["PATCH"].as_strategy(path_parameters={"request_id": repair_id})
 
         @settings(max_examples=4, deadline=None, derandomize=True, phases=(Phase.explicit, Phase.generate))

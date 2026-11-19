@@ -1,4 +1,4 @@
-"""Read the repair list through Swagger UI in a real Chromium browser."""
+"""Chromium で Swagger UI を操作し、表示された依頼一覧を実際の応答と比べる。"""
 
 import json
 
@@ -15,7 +15,7 @@ def main():
         page.set_default_timeout(45_000)
         page.goto(f"{BASE_URL}/docs", wait_until="domcontentloaded")
 
-        # Swagger UI gives each operation a distinct ID using its tag and OpenAPI operationId.
+        # Swagger UI がタグと OpenAPI の operationId から作る ID で、一覧取得の操作欄を選ぶ。
         operation = page.locator("#operations-default-list_repairs_repair_requests_get")
         operation.locator("button.opblock-summary-control").click()
         operation.get_by_role("button", name="Try it out", exact=True).click()

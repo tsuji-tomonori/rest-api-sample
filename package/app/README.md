@@ -10,7 +10,7 @@ Docker と Docker Compose v2 を用意し、以下のコマンドはすべて**�
 docker compose up --build --wait api
 ```
 
-ブラウザーで [Swagger UI](http://127.0.0.1:8000/docs) を開きます。ここに並ぶ入力欄は、起動中の API が公開する [OpenAPI 定義](http://127.0.0.1:8000/openapi.json) から作られます。Python と SQLite で同じ API を試す場合は、第8章の手順が使えます。[第8章の起動手順](../../docs/08-fastapi.md)・[FastAPI の対話型ドキュメント](https://fastapi.tiangolo.com/tutorial/first-steps/#interactive-api-docs)
+ブラウザーで [Swagger UI](http://127.0.0.1:8000/docs) を開きます。入力欄は、起動中の API が公開する [OpenAPI 定義](http://127.0.0.1:8000/openapi.json) から作られます。このサンプルは FastAPI の標準設定を使うため、画面を開くにはブラウザーから Swagger UI の配信元（CDN）への接続も必要です。Python と SQLite で同じ API を試す手順は第8章にあります。[第8章の起動手順](../../docs/08-fastapi.md)・[FastAPI の画面用ファイルと配信元](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/)
 
 ### Swagger UI で登録から照会まで確かめる
 

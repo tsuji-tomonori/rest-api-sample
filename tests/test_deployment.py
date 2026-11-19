@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 from botocore.credentials import Credentials
+from botocore.exceptions import ClientError
 
 from package.infra import post_deploy
 
@@ -19,6 +20,15 @@ def test_synchronous_migration_requires_success_payload():
     client.invoke.assert_called_once_with(FunctionName="repair-migrate", InvocationType="RequestResponse", Payload=b"{}")
 
 
+def test_migration_retries_a_pre_execution_iam_denial(monkeypatch):
+    client = Mock()
+    refused = ClientError({"Error": {"Code": "AccessDeniedException"}}, "Invoke")
+    client.invoke.side_effect = [refused, migration_result()]
+    monkeypatch.setattr(post_deploy, "sleep", lambda _: None)
+    post_deploy.apply_migrations(client, "repair-migrate")
+    assert client.invoke.call_count == 2
+
+
 @pytest.mark.parametrize("result", [
     migration_result(FunctionError="Unhandled"), migration_result(StatusCode=202), migration_result(b"{}"),
 ])
@@ -27,6 +37,7 @@ def test_failed_migration_stops_deployment(result):
     client.invoke.return_value = result
     with pytest.raises(RuntimeError):
         post_deploy.apply_migrations(client, "repair-migrate")
+    assert client.invoke.call_count == 1
 
 
 REGION = "ap-northeast-1"

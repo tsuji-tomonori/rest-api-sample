@@ -10,6 +10,7 @@ import boto3
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from botocore.config import Config
+from botocore.exceptions import ClientError
 from botocore.httpsession import URLLib3Session
 from pydantic import ValidationError
 
@@ -17,7 +18,15 @@ from package.app.schemas import RepairPage
 
 
 def apply_migrations(client, function_name: str) -> None:
-    result = client.invoke(FunctionName=function_name, InvocationType="RequestResponse", Payload=b"{}")
+    for attempt in range(4):
+        try:
+            result = client.invoke(FunctionName=function_name, InvocationType="RequestResponse", Payload=b"{}")
+            break
+        except ClientError as error:
+            # 付与した権限が反映されるまでの拒否だけを再試行する。実行後の例外はそのまま報告する。
+            if error.response["Error"]["Code"] != "AccessDeniedException" or attempt == 3:
+                raise
+            sleep(2 ** (attempt + 1))
     # 同期呼び出しは、関数が例外で終了しても Lambda サービス自体のステータスが 200 になる。
     if result["StatusCode"] != 200 or result.get("FunctionError"):
         raise RuntimeError(f"Migration failed. Check the CloudWatch logs for {function_name}.")

@@ -10,7 +10,6 @@ permissions: {}
 jobs:
   candidate:
     if: >-
-      vars.AWS_ROLE_ARN != '' &&
       github.event.workflow.path == '.github/workflows/verify.yml' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.conclusion == 'success' &&
@@ -27,12 +26,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+          HAS_TARGET: ${{ vars.AWS_ROLE_ARN != '' }}
         run: |
           latest=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
-          if [[ "$VERIFIED_SHA" == "$latest" ]]; then
-            echo "current=true" >> "$GITHUB_OUTPUT"
+          if [[ "$VERIFIED_SHA" != "$latest" ]]; then
+            echo "A newer revision is on main; skipping this deployment." >> "$GITHUB_STEP_SUMMARY"
+          elif [[ "$HAS_TARGET" != "true" ]]; then
+            echo "Verified CI revision $VERIFIED_SHA. AWS_ROLE_ARN is not configured; deployment skipped." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "A newer revision is on main; skipping this deployment."
+            echo "current=true" >> "$GITHUB_OUTPUT"
           fi
 
   deploy:
@@ -44,6 +46,7 @@ jobs:
     concurrency:
       group: repair-api-aws-deploy
       cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
       id-token: write
