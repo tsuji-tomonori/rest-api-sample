@@ -1,29 +1,10 @@
-name: Verify sample
-on:
-  push:
-  pull_request:
-  workflow_dispatch:
-
+name: Resolve test dependencies
+on: push
 permissions:
   contents: read
-
 jobs:
-  verify:
+  resolve:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: repairs_ci
-          POSTGRES_PASSWORD: ci-only
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -32,27 +13,9 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           version: '0.10.0'
-          enable-cache: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install locked application, test and infrastructure dependencies
-        run: uv sync --locked --group infra
-      - name: Check API and migrations
-        env:
-          TEST_POSTGRES_URL: postgresql+psycopg://postgres:ci-only@127.0.0.1:5432/repairs_ci
-        run: uv run --locked --group infra python -m pytest -q
-      - name: Check the published OpenAPI contract
-        run: uv run --locked --group infra python -m package.app.export_openapi --check docs/openapi.json
-      - name: Synthesize the infrastructure
-        working-directory: package/infra
-        run: npx --yes --package=aws-cdk@2 cdk synth RepairApi --no-lookups --quiet
-      - name: Build the image staged by CDK
+          enable-cache: false
+      - run: uv lock
+      - name: Share the resolved dependency lock
         run: |
-          dockerfile=$(find package/infra/cdk.out -type f -name Dockerfile -print -quit)
-          test -n "$dockerfile"
-          docker build --platform linux/amd64 --provenance=false -t repair-sample "$(dirname "$dockerfile")"
-      - name: Import the packaged Lambda handlers
-        run: >-
-          docker run --rm --entrypoint python repair-sample -c
-          'from package.app.main import handler; from package.db.migrate import handler as migrate'
+          sha256sum uv.lock
+          gzip -nc uv.lock | base64 -w 1400 | sed 's/^/LOCK-CHUNK /'

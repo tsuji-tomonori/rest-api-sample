@@ -16,8 +16,11 @@ dependencies = [
 [dependency-groups]
 dev = [
     "httpx==0.28.1",
-    "pytest==8.3.3",
+    "pytest==8.4.2",
     "uvicorn==0.40.0",
+]
+contract = [
+    "schemathesis==4.33.4",
 ]
 infra = [
     "aws-cdk-lib==2.220.0",
