@@ -1,6 +1,8 @@
 **
 !Dockerfile
 !.dockerignore
+!pyproject.toml
+!uv.lock
 !package
 package/*
 !package/app
