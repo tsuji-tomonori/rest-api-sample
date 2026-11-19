@@ -5,8 +5,8 @@ info:
 paths:
   /repair-requests:
     post:
-      summary: Create Repair
-      operationId: create_repair_repair_requests_post
+      summary: 修理依頼を登録する
+      operationId: createRepair
       requestBody:
         required: true
         content:
@@ -36,7 +36,7 @@ paths:
                   status: open
       responses:
         '201':
-          description: Successful Response
+          description: 修理依頼を登録しました。本文に登録内容、Location に取得先のパスを返します。
           content:
             application/json:
               schema:
@@ -46,82 +46,26 @@ paths:
               description: 登録した依頼のパス
               schema:
                 type: string
+                format: uri-reference
               example: /repair-requests/42
         '400':
-          description: Bad Request
+          description: 本文を JSON として読み取れません。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
         '415':
-          description: Unsupported Media Type
+          description: 本文の Content-Type に application/json を指定してください。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
         '422':
-          description: Unprocessable Content
+          description: 入力値が条件に合いません。エラーの詳細で該当する項目を確認してください。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
       x-negative-examples:
         blank-title:
           summary: 件名が空白だけ
@@ -137,8 +81,8 @@ paths:
             location: 第2会議室
           x-expected-status: 422
     get:
-      summary: List Repairs
-      operationId: list_repairs_repair_requests_get
+      summary: 修理依頼の一覧を取得する
+      operationId: listRepairs
       parameters:
       - name: status
         in: query
@@ -178,40 +122,21 @@ paths:
           title: After
       responses:
         '200':
-          description: Successful Response
+          description: 条件に合う依頼を受付番号順に返します。
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RepairPage'
         '422':
-          description: Unprocessable Content
+          description: 入力値が条件に合いません。エラーの詳細で該当する項目を確認してください。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
   /repair-requests/{request_id}:
     get:
-      summary: Get Repair
-      operationId: get_repair_repair_requests__request_id__get
+      summary: 修理依頼を1件取得する
+      operationId: getRepair
       parameters:
       - name: request_id
         in: path
@@ -223,36 +148,17 @@ paths:
           title: Request Id
       responses:
         '200':
-          description: Successful Response
+          description: 指定した受付番号の依頼を返します。
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Repair'
         '404':
-          description: Not Found
+          description: 指定した受付番号の依頼が見つかりません。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
               examples:
                 not-found:
                   summary: 指定した依頼がない
@@ -262,33 +168,14 @@ paths:
                     status: 404
                     detail: 修理依頼が見つかりません。
         '422':
-          description: Unprocessable Content
+          description: 入力値が条件に合いません。エラーの詳細で該当する項目を確認してください。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
     patch:
-      summary: Update Status
-      operationId: update_status_repair_requests__request_id__patch
+      summary: 修理依頼の状態を変更する
+      operationId: updateRepairStatus
       parameters:
       - name: request_id
         in: path
@@ -321,61 +208,23 @@ paths:
                   status: open
       responses:
         '200':
-          description: Successful Response
+          description: 状態を変更し、変更後の依頼を返します。
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Repair'
         '400':
-          description: Bad Request
+          description: 本文を JSON として読み取れません。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
         '404':
-          description: Not Found
+          description: 指定した受付番号の依頼が見つかりません。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
               examples:
                 not-found:
                   summary: 指定した依頼がない
@@ -385,55 +234,17 @@ paths:
                     status: 404
                     detail: 修理依頼が見つかりません。
         '415':
-          description: Unsupported Media Type
+          description: 本文の Content-Type に application/json を指定してください。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
         '422':
-          description: Unprocessable Content
+          description: 入力値が条件に合いません。エラーの詳細で該当する項目を確認してください。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
       x-negative-examples:
         unknown-status:
           summary: 定義されていない状態を指定した
@@ -445,8 +256,8 @@ paths:
           value: {}
           x-expected-status: 422
     delete:
-      summary: Delete Repair
-      operationId: delete_repair_repair_requests__request_id__delete
+      summary: 修理依頼を削除する
+      operationId: deleteRepair
       parameters:
       - name: request_id
         in: path
@@ -458,32 +269,13 @@ paths:
           title: Request Id
       responses:
         '204':
-          description: Successful Response
+          description: 依頼を削除しました。応答本文はありません。
         '404':
-          description: Not Found
+          description: 指定した受付番号の依頼が見つかりません。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
               examples:
                 not-found:
                   summary: 指定した依頼がない
@@ -493,30 +285,11 @@ paths:
                     status: 404
                     detail: 修理依頼が見つかりません。
         '422':
-          description: Unprocessable Content
+          description: 入力値が条件に合いません。エラーの詳細で該当する項目を確認してください。
           content:
             application/problem+json:
               schema:
-                properties:
-                  type:
-                    default: about:blank
-                    title: Type
-                    type: string
-                  title:
-                    title: Title
-                    type: string
-                  status:
-                    title: Status
-                    type: integer
-                  detail:
-                    title: Detail
-                    type: string
-                required:
-                - title
-                - status
-                - detail
-                title: Problem
-                type: object
+                $ref: '#/components/schemas/Problem'
 components:
   schemas:
     NewRepair:
@@ -597,3 +370,24 @@ components:
       required:
       - status
       title: StatusChange
+    Problem:
+      properties:
+        type:
+          default: about:blank
+          title: Type
+          type: string
+        title:
+          title: Title
+          type: string
+        status:
+          title: Status
+          type: integer
+        detail:
+          title: Detail
+          type: string
+      required:
+      - title
+      - status
+      - detail
+      title: Problem
+      type: object

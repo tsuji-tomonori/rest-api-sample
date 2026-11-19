@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="310" viewBox="0 0 900 310" role="img" aria-labelledby="title desc" lang="ja">
+  <title id="title">受付番号42の修理依頼を開く URI</title>
+  <desc id="desc">https はスキーム、example.com はホスト名、/repair-requests/42 はパス。仕様書の {request_id} に受付番号 42 を当てはめる。</desc>
+  <style>
+    .label {font-family:"Yu Gothic",Meiryo,sans-serif;fill:#203d45}
+    .code {font-family:Consolas,"DejaVu Sans Mono",monospace;fill:#203d45}
+    .line {fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .id {fill:#873900;font-weight:bold}
+  </style>
+  <rect x="1" y="1" width="898" height="308" rx="15" fill="#fffefa" stroke="#cad7d4"/>
+  <text x="28" y="35" class="label" font-size="21" font-weight="bold">受付番号 42 の修理依頼を開く URI</text>
+  <rect x="661" y="52" width="44" height="39" rx="5" fill="#ffe7c2"/>
+  <g class="code" font-size="29" aria-label="https://example.com/repair-requests/42">
+    <text x="35" y="83" fill="#334f78" textLength="90" lengthAdjust="spacingAndGlyphs">https</text>
+    <text x="125" y="83" textLength="54" lengthAdjust="spacingAndGlyphs">://</text>
+    <text x="179" y="83" fill="#00655d" textLength="198" lengthAdjust="spacingAndGlyphs">example.com</text>
+    <text x="377" y="83" textLength="288" lengthAdjust="spacingAndGlyphs">/repair-requests/</text>
+    <text x="665" y="83" class="id" textLength="36" lengthAdjust="spacingAndGlyphs">42</text>
+  </g>
+  <g class="line">
+    <path d="M35 96v7h90v-7m-45 7v12" stroke="#47678d"/>
+    <path d="M180 96v7h196v-7m-98 7v12" stroke="#167268"/>
+    <path d="M378 96v7h323v-7m-162 7v12" stroke="#49656a"/>
+  </g>
+  <g class="label" font-size="22" text-anchor="middle">
+    <text x="80" y="143">スキーム</text><text x="278" y="143">ホスト名</text><text x="539" y="143">パス</text>
+  </g>
+  <path d="M1 163h898" stroke="#cad7d4"/>
+  <g class="label" font-size="21" font-weight="bold">
+    <text x="28" y="205">仕様書のパス</text><text x="28" y="284">実際のパス</text>
+  </g>
+  <g class="code" font-size="24">
+    <text x="210" y="205" textLength="240" lengthAdjust="spacingAndGlyphs">/repair-requests/</text>
+    <rect x="450" y="178" width="190" height="36" rx="4" fill="#ffe7c2"/>
+    <text x="453" y="205" class="id">{request_id}</text>
+    <text x="210" y="284" textLength="240" lengthAdjust="spacingAndGlyphs">/repair-requests/</text>
+    <rect x="450" y="257" width="37" height="35" rx="4" fill="#ffe7c2"/>
+    <text x="453" y="284" class="id">42</text>
+  </g>
+  <path d="M468 219v30m-5-6 5 6 5-6" class="line" stroke="#873900"/>
+  <text x="488" y="241" class="label" font-size="18">波かっこを含む部分を受付番号に置き換える</text>
+</svg>
