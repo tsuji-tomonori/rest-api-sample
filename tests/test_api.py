@@ -2,8 +2,10 @@
 
 import asyncio
 import json
+from pathlib import Path
 
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from package.app.main import app, handler
@@ -106,13 +108,35 @@ def test_body_format_and_failed_update(client):
     assert client.patch(f"{COLLECTION}/42", json={"status": "completed"}).status_code == 404
 
 
-def test_openapi_matches_error_media_type_and_creation(client):
-    paths = client.get("/openapi.json").json()["paths"]
+def test_published_yaml_matches_runtime_and_keeps_operation_ids(client):
+    contract = client.get("/openapi.json").json()
+    published = Path(__file__).resolve().parents[1] / "docs" / "openapi.yaml"
+    assert contract == yaml.safe_load(published.read_text(encoding="utf-8"))
+    detail = COLLECTION + "/{request_id}"
+    operations = {
+        (path, method): operation["operationId"]
+        for path, item in contract["paths"].items() for method, operation in item.items()
+    }
+    assert operations == {
+        (COLLECTION, "post"): "createRepair", (COLLECTION, "get"): "listRepairs",
+        (detail, "get"): "getRepair", (detail, "patch"): "updateRepairStatus", (detail, "delete"): "deleteRepair",
+    }
+
+
+def test_openapi_responses_share_one_problem_schema(client):
+    contract = client.get("/openapi.json").json()
+    paths = contract["paths"]
+    assert set(contract["components"]["schemas"]["Problem"]["properties"]) == {"type", "title", "status", "detail"}
+    for item in paths.values():
+        for operation in item.values():
+            for status_code, response in operation["responses"].items():
+                if int(status_code) >= 400:
+                    assert set(response["content"]) == {"application/problem+json"}
+                    schema = response["content"]["application/problem+json"]["schema"]
+                    assert schema == {"$ref": "#/components/schemas/Problem"}
     responses = paths[COLLECTION]["post"]["responses"]
-    assert "Location" in responses["201"]["headers"]
+    assert responses["201"]["headers"]["Location"]["schema"] == {"type": "string", "format": "uri-reference"}
     assert set(responses["201"]["content"]) == {"application/json"}
-    for code in ("400", "415", "422"):
-        assert set(responses[code]["content"]) == {"application/problem+json"}
     assert "content" not in paths[COLLECTION + "/{request_id}"]["delete"]["responses"]["204"]
 
 

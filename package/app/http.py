@@ -19,6 +19,25 @@ class Problem(BaseModel):
     detail: str
 
 
+class RepairAPI(FastAPI):
+    def openapi(self) -> dict[str, Any]:
+        if self.openapi_schema is not None:
+            return self.openapi_schema
+        # 標準の仕様書に、例外ハンドラーが返す共通の本文を加える。次回はこの仕様書を再利用する。
+        document = super().openapi()
+        components = document.setdefault("components", {})
+        components.setdefault("schemas", {})["Problem"] = Problem.model_json_schema()
+        return document
+
+
+ERROR_DESCRIPTIONS = {
+    400: "本文を JSON として読み取れません。",
+    404: "指定した受付番号の依頼が見つかりません。",
+    415: "本文の Content-Type に application/json を指定してください。",
+    422: "入力値が条件に合いません。エラーの詳細で該当する項目を確認してください。",
+}
+
+
 def status_title(code: int) -> str:
     # 422 の見出しは RFC 9110 の表記に合わせる。Python 3.12 では旧称の Unprocessable Entity が返る。
     return "Unprocessable Content" if code == 422 else HTTPStatus(code).phrase
@@ -28,8 +47,8 @@ def problems(*codes: int) -> dict:
     # 各ルートの responses に渡す定義。利用者が OpenAPI を読むと、起こりうるエラーと本文の形が分かる。
     responses: dict[int, dict[str, Any]] = {
         code: {
-            "description": status_title(code),
-            "content": {"application/problem+json": {"schema": Problem.model_json_schema()}},
+            "description": ERROR_DESCRIPTIONS[code],
+            "content": {"application/problem+json": {"schema": {"$ref": "#/components/schemas/Problem"}}},
         }
         for code in codes
     }

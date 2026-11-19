@@ -54,8 +54,8 @@ jobs:
         run: uv run --locked --group infra python -m pytest -q tests/test_postgres.py
       - name: Check migration and smoke-test handling for CD
         run: uv run --locked --group infra python -m pytest -q tests/test_deployment.py
-      - name: Compare the published YAML and JSON contracts with FastAPI
-        run: uv run --locked --group infra python -m package.app.export_openapi --check docs/openapi.yaml docs/openapi.json
+      - name: Compare the published OpenAPI YAML with FastAPI
+        run: uv run --locked --group infra python -m package.app.export_openapi --check docs/openapi.yaml
       - name: Synthesize the infrastructure
         working-directory: package/infra
         run: npx --yes --package=aws-cdk@2.1148.1 cdk synth RepairApi --no-lookups --quiet
