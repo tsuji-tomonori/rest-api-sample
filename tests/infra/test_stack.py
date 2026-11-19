@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from aws_cdk import App, Aspects, CfnResource, TagManager
+from aws_cdk import App, Aspects
 from aws_cdk.assertions import Template
 from cdk_nag import AwsSolutionsChecks
 
@@ -26,8 +26,8 @@ def deployment(tmp_path_factory):
     app = App(outdir=str(output), context=context)
     stack = RepairApiStack(app, "RepairApi")
     Aspects.of(stack).add(AwsSolutionsChecks())
-    app.synth()
-    return stack, Template.from_stack(stack), output
+    assembly = app.synth()
+    return stack, Template.from_stack(stack), Path(assembly.directory)
 
 
 def test_cost_controls(deployment):
@@ -63,17 +63,23 @@ def test_gateway_and_logs(deployment):
 
 
 def test_all_taggable_resources(deployment):
-    stack, template, _ = deployment
+    _, template, _ = deployment
     resources = template.to_json()["Resources"]
     required = {"Application": "repair-api", "Environment": "sample", "ManagedBy": "aws-cdk"}
-    for node in stack.node.find_all():
-        if isinstance(node, CfnResource) and (TagManager.is_taggable(node) or TagManager.is_taggable_v2(node)):
-            logical_id = stack.get_logical_id(node)
-            tags = resources[logical_id]["Properties"].get("Tags", {})
-            if isinstance(tags, list):
-                tags = {item["Key"]: item["Value"] for item in tags}
-            for key, value in required.items():
-                assert tags.get(key) == value, (logical_id, key)
+    # Tags プロパティのない型だけを除く。新しく追加した型も既定で検査する。
+    untaggable = {
+        "AWS::EC2::SubnetRouteTableAssociation", "AWS::EC2::SecurityGroupIngress",
+        "AWS::SecretsManager::SecretTargetAttachment", "AWS::IAM::Policy",
+        "AWS::ApiGatewayV2::Integration", "AWS::ApiGatewayV2::Route", "AWS::Lambda::Permission",
+    }
+    for logical_id, resource in resources.items():
+        if resource["Type"] in untaggable:
+            continue
+        tags = resource["Properties"].get("Tags", {})
+        if isinstance(tags, list):
+            tags = {item["Key"]: item["Value"] for item in tags}
+        for key, value in required.items():
+            assert tags.get(key) == value, (logical_id, key)
 
 
 def test_snapshot(deployment):
@@ -93,7 +99,9 @@ def test_snapshot(deployment):
 
 def test_aws_solutions_findings(deployment):
     _, _, output = deployment
-    with (output / "AwsSolutions-RepairApi-NagReport.csv").open(newline="") as report:
+    reports = list(output.glob("*.csv"))
+    assert len(reports) == 1, reports
+    with reports[0].open(newline="") as report:
         rows = list(csv.DictReader(report))
     assert rows, "cdk-nag did not evaluate the stack"
     findings = {(row["Rule ID"], row["Resource ID"]) for row in rows if row["Compliance"] != "Compliant"}
