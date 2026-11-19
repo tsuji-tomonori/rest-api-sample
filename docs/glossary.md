@@ -38,10 +38,23 @@
 | スキーマ | データの形や許す値の規則。たとえば受付番号は1以上の整数と定める |
 | Swagger UI | OpenAPI 仕様書を読み込み、ブラウザーから入力例や操作を確認できる画面 |
 
+## 動作をどう確かめるか
+
+| 用語 | 修理依頼での使い方 |
+| --- | --- |
+| 契約テスト | 公開仕様書の入力例を API に送り、`201` や `Location`、返った依頼の内容が約束どおりかを調べる |
+| 疎通確認 | 配信後、実際の URL に署名付きの一覧取得を送り、権限の確認から DB の読み取りまで通るかを調べる |
+| CI / CD | CI（継続的インテグレーション）は変更を取り込むたびにテストする。この教材の CD は、検証済みの版を設定済みの AWS 環境に配信する |
+| メトリクス / ログ | メトリクスは5分間のエラー件数などを集計した数値。ログは、ある時刻にどのリクエストが失敗したかを追う記録 |
+| アラーム | エラー件数が決めた基準を超えたときなどに状態が変わる監視の仕組み。当番への通知先と初動を合わせて決める |
+
+テストの範囲と実行例は[第11章](11-testing.md)、公開後に数値と記録を読み解く手順は[第12章](12-operations.md)で扱います。
+
 ## 根拠と参考
 
 - [Fielding 第5章　REST](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm)・[RFC 3986 §1.1.3　URI と URL](https://www.rfc-editor.org/rfc/rfc3986.html#section-1.1.3)
 - [RFC 9110　HTTP の意味](https://www.rfc-editor.org/rfc/rfc9110.html)・[RFC 8259　JSON](https://www.rfc-editor.org/rfc/rfc8259.html)
 - [OpenAPI 3.1.1](https://spec.openapis.org/oas/v3.1.1.html)・[YAML 1.2.2](https://yaml.org/spec/1.2.2/)・[Swagger UI](https://swagger.io/tools/swagger-ui/)
+- [Schemathesis の契約検証](https://schemathesis.readthedocs.io/en/stable/guides/schema-conformance/)・[AWS　CloudWatch アラーム](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Alarms.html)
 
 [目次](../README.md) ｜ [空欄の設計シート](templates/contract-sheet.md)

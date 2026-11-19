@@ -1,6 +1,6 @@
 # 第10章　設計した API を AWS で動かす
 
-**サンプルで試せる**　手元で登録した修理依頼を、別の端末からも同じ受付番号で開きたいとします。この章では受付 API と台帳を AWS に置きます。API の使い方は手元と同じです。新たに決めるのは、誰のリクエストを通し、どの関数がどのデータベースを使うかです。
+**サンプルで試せる**　修理依頼を受け付ける FastAPI ができました。次は、社員が同じ台帳を使えるように、API とデータベースを AWS に配置します。登録先のパスとレスポンスは第9章と同じです。ここで用意するのは、利用者が API を呼ぶ入口、アプリがデータを保存する経路、台帳を更新する手順です。
 
 ## 登録ボタンから台帳まで
 
@@ -32,7 +32,12 @@ default_integration=integrations.HttpLambdaIntegration("FastAPI", api_handler),
 
 2行目は `$default` ルートに届いたリクエストを API 用 Lambda に渡します。CDK は Gateway が関数を呼ぶ許可も設定します。Lambda の入口 `package.app.main.handler` では Mangum がイベントを FastAPI に渡し、FastAPI がメソッドとパスに対応する処理を選びます。公開先は `$default` ステージなので、利用者は URL にステージ名を足さずに呼べます。
 
-**設計例（未実装）　社員向けの画面を用意する場合。** 第1章の社員がスマートフォンで操作するなら、たとえば会社のログイン基盤でサインインし、画面から API にアクセストークンを送ります。API Gateway の JWT オーソライザーはトークンの署名、発行元、有効期限などを検証し、確認した情報を Lambda に渡します。アプリは発行元と利用者 ID から社員を特定し、社員台帳の所属や保存済みの依頼者と照合して、閲覧・変更を許可します。社員が端末に AWS のアクセスキーを設定する手順はありません。
+<details>
+<summary>設計例（未実装）　社員がスマートフォンから使う場合</summary>
+
+第1章の社員が会社のログイン基盤でサインインする場合、画面はアクセストークンを API に送ります。API Gateway の JWT オーソライザーはトークンの署名、発行元、有効期限などを検証し、確認した情報を Lambda に渡します。アプリは発行元と利用者 ID から社員を特定し、社員台帳の所属や保存済みの依頼者と照合して、閲覧・変更を許可します。
+
+</details>
 
 ## Lambda と Aurora をつなぐ
 
@@ -42,23 +47,21 @@ default_integration=integrations.HttpLambdaIntegration("FastAPI", api_handler),
 | 接続情報 | Lambda は VPC エンドポイント経由で Secrets Manager に接続する。TCP 443 の通信と、API 用シークレットを読む IAM 権限を与える |
 | DB の接続先と権限 | `DB_HOST` と `DB_NAME` で接続先を指定する。`sslmode=verify-full` で証明書とホスト名を確認し、`repair_api` に許可した範囲でテーブルを読み書きする |
 
-初回のデプロイでは、移行用 Lambda が Alembic を使ってテーブルを作り、API 用の DB ユーザーに必要な権限を与えます。API 用 Lambda は日々の登録と照会を受け持ちます。2つの役割を分けることで、通常のリクエストを処理する関数に、テーブルの構造を変える権限を渡さずに済みます。
+データベースを作っただけでは、修理依頼を入れるテーブルはまだありません。デプロイ後に移行用 Lambda を呼ぶと、Alembic が未適用のテーブル変更を行い、続いて移行用 Lambda が API 用の DB ユーザーに権限を与えます。日々の登録と照会に使う DB ユーザーには、データを読み書きするための権限だけを与えます。
 
-## つながったことを確かめる
+## 構成を確かめ、台帳を使える状態にする
 
-デプロイ後は GitHub Actions の **Deploy to AWS** で `aws-smoke-report` を開きます。署名なしの一覧取得は `403`、署名付きで `limit=1` なら `200`、同じ署名方式でも `limit=0` なら入力エラーの `422` が期待値です。一覧が空でも、`200` と正しい形式の一覧が届けば、Gateway から台帳まで読めたことが分かります。
+構成は Python のコードで定義し、同じ設定を繰り返し適用できるようにします。このサンプルでは、GitHub Actions が次の順で確かめます。
 
-<details>
-<summary>発展　リクエストが途中で止まったときの調べ方</summary>
+| 段階 | 何を確かめるか | どこで結果を読むか |
+| --- | --- | --- |
+| AWS に配置する前 | `cdk synth` で CloudFormation のテンプレートを生成する。配布するイメージもビルドし、その中で API 用と移行用の関数を読み込めることを確かめる | CI の `Verify sample` |
+| AWS へ配置するとき | 検証済みのコミットから `cdk deploy` でスタックを適用し、移行用 Lambda を呼ぶ。新規環境ならテーブルを作り、更新時は未適用の変更を反映する | CD の `Deploy to AWS` と移行結果 |
+| 配置後 | 公開 URL に署名なしで一覧を要求すると `403`。署名付きなら `limit=1` で `200`、`limit=0` で `422`。一覧が空でも応答の形式まで照合する | CD が保存する `aws-smoke-report` |
 
-| 症状 | 最初に確かめるところ |
-| --- | --- |
-| 署名付きでも Gateway が `403` を返す | 署名のリージョン、認証情報の有効期限、対象 API の呼び出し権限 |
-| Lambda が呼ばれない | Gateway のルート・統合先と、Gateway から Lambda を呼ぶ許可 |
-| DB の接続情報を取得できない | シークレットの読み取り権限。タイムアウトならエンドポイントの DNS と TCP 443 |
-| SQL でエラーになる | タイムアウトなら接続先と TCP 5432。テーブルや権限のエラーならマイグレーション結果 |
+CD はデプロイ先を設定すると実行されます。署名付きの一覧取得が通れば、その時点で入口から Aurora まで読み取れたと分かります。登録・更新・削除の動作は、第11章でテスト専用の台帳を使って確かめます。[構築手順と実行結果の読み方](../package/infra/README.md)・[第11章　API のテストを組み立てる](11-testing.md)
 
-</details>
+運用担当には、公開 URL とデプロイ結果に加え、調査に使うログの場所を伝えます。修理依頼の処理を調べるなら API 用 Lambda、テーブル定義の変更を調べるなら移行用 Lambda の実行ログを開きます。サンプルはそれぞれのログを CloudWatch Logs に7日間保存します。受付が遅いとき、入口の応答時間を手掛かりにどこから調べるかは、第12章で扱います。[第12章　API の運用と監視を始める](12-operations.md)
 
 <details>
 <summary>設計例（未実装）　コマンドでは通るのに、別の Web 画面からだけ登録できない</summary>
@@ -80,6 +83,7 @@ default_integration=integrations.HttpLambdaIntegration("FastAPI", api_handler),
 - **入口と認可**　[AWS の IAM 認可](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-access-control-iam.html)・[JWT オーソライザー](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html)・[HTTP API の CORS 設定](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html)
 - **関数へ渡す方法**　[Lambda プロキシ統合とイベント形式](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)・[API Gateway が Lambda を呼ぶ許可](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html#services-apigateway-permissions)
 - **保存先への接続**　[Lambda の VPC 接続](https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html)・[Secrets Manager の VPC 接続](https://docs.aws.amazon.com/secretsmanager/latest/userguide/vpc-endpoint-overview.html)・[Aurora の TLS](https://docs.aws.amazon.com/ja_jp/AmazonRDS/latest/AuroraUserGuide/AuroraPostgreSQL.Security.html)
+- **配置と記録**　[CDK の合成とデプロイ](https://docs.aws.amazon.com/cdk/v2/guide/deploy.html)・[Lambda のロググループ](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-cloudwatchlogs-loggroups.html)
 - [CDK の実装](../package/infra/app.py)・[接続コード](../package/app/database.py)・[デプロイ手順と疎通確認](../package/infra/README.md)
 
-[前へ　第9章　仕様書の約束を FastAPI で実装する](09-fastapi.md) ｜ [目次](../README.md) ｜ [次へ　第11章　API のバージョンを上げる](11-versioning.md)
+[前へ　第9章　仕様書の約束を FastAPI で実装する](09-fastapi.md) ｜ [目次](../README.md) ｜ [次へ　第11章　API のテストを組み立てる](11-testing.md)

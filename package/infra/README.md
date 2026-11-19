@@ -1,10 +1,10 @@
 # 修理依頼 API のデプロイ
 
-各サービスの役割と、接続に必要な設定は[第10章](../../docs/10-aws.md)で説明しています。ここでは Python CDK の操作だけを示します。コマンドは Bash 用です。デプロイには AWS CLI の認証情報、CDK CLI、Docker を使います。
+第10章で組み立てた API Gateway、Lambda、Aurora を AWS に配置します。手元から構築するときは「スタックを作成する」から、GitHub から自動配信するときは「GitHub Actions から継続的にデプロイする」から読みます。どちらも、スタックを適用し、DB を移行してから、公開 URL で一覧を取得する流れです。[構成と接続設定](../../docs/10-aws.md)
 
 ## スタックを作成する
 
-リポジトリのルートから実行します。最初に表示された AWS アカウントとロール、`cdk diff` の変更内容を確認してください。対象リージョンへの初回デプロイには [CDK のブートストラップ](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)が必要です。
+次のコマンドは Bash 用です。認証済みの AWS CLI、uv、CDK CLI、Docker を使い、リポジトリのルートから実行します。`cdk synth` はテンプレートを生成し、`cdk diff` はデプロイ済みのスタックとの差分を示します。表示されたアカウント、ロール、差分を確認してから `cdk deploy` で適用してください。対象アカウント・リージョンへの初回デプロイにはブートストラップが必要です。[CDK のデプロイ](https://docs.aws.amazon.com/cdk/v2/guide/deploy.html)・[ブートストラップ](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
 
 ```bash
 export AWS_REGION=ap-northeast-1
@@ -12,6 +12,7 @@ export BUILDX_NO_DEFAULT_ATTESTATIONS=1
 aws sts get-caller-identity
 uv sync --locked --group infra
 cd package/infra
+cdk synth RepairApi --no-lookups --quiet
 cdk diff RepairApi
 cdk deploy RepairApi --outputs-file cdk.out/repair-outputs.json
 ```
@@ -20,7 +21,7 @@ Aurora のバージョンは [cdk.json](cdk.json) の `auroraVersion` で指定�
 
 ## テーブルを用意し、API を呼ぶ
 
-出力された `MigrateFunction` の関数名を使います。初回とテーブル定義を変更したときに実行します。
+出力ファイル `cdk.out/repair-outputs.json` の `RepairApi` に、次の操作で使う値が入ります。`MigrateFunction` は移行用 Lambda の名前、`ApiUrl` は公開 URL、`InvokeArn` は API の呼び出しを許可する対象です。まず移行用 Lambda を実行します。初回は修理依頼のテーブルが作られ、更新時は未適用の変更が反映されます。
 
 ```bash
 MIGRATE='MigrateFunction の値'
@@ -43,7 +44,7 @@ SIGN
 )
 ```
 
-新しい台帳では `200` と `{"items":[],"next_after":null}` が返ります。デプロイ後は、Aurora の自動停止中もストレージ、VPC エンドポイント、シークレットなどに料金が発生します。環境が不要になったら `package/infra` で `cdk destroy RepairApi` を実行します。**スタックを削除すると修理依頼のデータも削除されます。** ブートストラップ用のスタックとイメージは別に管理されます。[Aurora の自動停止](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html)・[PrivateLink の料金](https://aws.amazon.com/privatelink/pricing/)・[Secrets Manager の料金](https://aws.amazon.com/secrets-manager/pricing/)
+新しい台帳では `200` と `{"items":[],"next_after":null}` が返ります。公開 URL から権限を確認し、API 用 Lambda を経て Aurora の一覧を読み取れた状態です。
 
 ## GitHub Actions から継続的にデプロイする
 
@@ -89,3 +90,13 @@ export AWS_DEFAULT_REGION=ap-northeast-1
 uv run --locked python -m package.infra.post_deploy package/infra/cdk.out/repair-outputs.json \
   --smoke-only --report package/infra/cdk.out/aws-smoke.json
 ```
+
+## 運用担当に引き継ぐ
+
+対象の AWS アカウント・リージョン、スタック名 `RepairApi`、公開 URL、配信したコミット、直近の疎通結果を共有します。疎通結果にあるのはデプロイ時点の記録です。業務フローや OpenAPI 契約の判定基準は第11章で確認できます。[第11章　API のテストを組み立てる](../../docs/11-testing.md)
+
+障害調査には CloudFormation のスタックの「リソース」から、API 用・移行用 Lambda をたどれます。各関数の「モニタリング」から実行ログを開きます。CDK は関数ごとにロググループを作り、7日間保存します。稼働中に追うメトリクスと通知の設計、次のバージョンへ切り替えるときの判断は、運用の章で説明します。[第12章　API の運用と監視を始める](../../docs/12-operations.md)・[第13章　API のバージョンを上げる](../../docs/13-versioning.md)
+
+## 検証環境の利用を終える
+
+Aurora の自動停止中もストレージ、VPC エンドポイント、シークレットなどに料金が発生します。サンプルはスタックと一緒に DB を削除する設定です。**修理依頼のデータを含めて廃棄する環境**であることを確認してから、`package/infra` で `cdk destroy RepairApi` を実行してください。ブートストラップ用のスタックとイメージは別に管理されます。[Aurora の自動停止](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2-auto-pause.html)・[PrivateLink の料金](https://aws.amazon.com/privatelink/pricing/)・[Secrets Manager の料金](https://aws.amazon.com/secrets-manager/pricing/)

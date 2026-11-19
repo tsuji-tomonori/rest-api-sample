@@ -16,9 +16,9 @@ docker compose up --build --wait api
 
 Swagger UI は、起動中の API の `/openapi.json` から操作や入力欄を読み込みます。リポジトリで配布する仕様書は `docs/openapi.yaml` です。画面の表示に必要なファイルは、FastAPI の既定の配信元（CDN）からブラウザーが取得します。Docker を使わずに始める場合は、SQLite を使う [FastAPI の起動手順](../../docs/09-fastapi.md) があります。
 
-## 操作を変更する
+## 設計した操作を実装する
 
-たとえば登録の仕様を変えるなら、「何を送れるか」「保存後に何が返るか」「依頼を再び開けるか」を設計シートに書きます。仕様を変えた箇所に合わせて、次のファイルを編集します。
+たとえば登録の仕様を変えるなら、設計シートで「保存後に利用者ができること」を決め、公開 YAML の `createRepair` で現在の入力とレスポンスを確認します。変更内容に合わせて、次のファイルを編集します。[設計シートの記入例](../../docs/06-contract.md)・[仕様書から登録処理を読む](../../docs/09-fastapi.md)
 
 | 変更内容 | 対応する場所 |
 | --- | --- |
@@ -27,44 +27,46 @@ Swagger UI は、起動中の API の `/openapi.json` から操作や入力欄�
 | エラー時の本文とメディアタイプ | [http.py](http.py) の `Problem` と共通処理。ルートごとの `responses` には該当するステータスを書く |
 | 保存する列と DB の制約 | [database.py](database.py) のテーブル定義と [DB マイグレーション](../db/migrations) |
 
-仕様書に載せる受理例は `Body(openapi_examples=...)`、拒否する例は `x-negative-examples` に登録します。どちらにも `value` に送る本文、`x-expected-status` に期待するステータスを書きます。`x-expected-fields` を指定すると、テストがレスポンスの項目の値も照合します。
+## 仕様書を更新し、変更を確かめる
 
-コードや例を変えたら、1行目で YAML を更新し、差分を読みます。2行目で、保存した仕様書と FastAPI が生成する内容が一致するか確認できます。
+ホストに uv と Python 3.12 を用意します。リポジトリのルートで依存関係をそろえ、実装から YAML を生成してください。差分を読み、意図した変更が設計シートと一致するかを確認します。
 
 ```console
+uv sync --locked
 uv run --locked python -m package.app.export_openapi docs/openapi.yaml
-uv run --locked python -m package.app.export_openapi --check docs/openapi.yaml
+git diff -- docs/openapi.yaml
 ```
 
-## 変更をテストする
+手元では、変更のたびに次のコマンドで単体テストと SQLite を使う結合テストを実行できます。API サーバーの起動は不要です。
 
-ホストで Python のコマンドを使うときは uv と Python 3.12 を用意し、初回に `uv sync --locked` を実行します。コードの静的検査には次の2行を使います。Ruff は未使用の名前などを、mypy は関数に渡す値の型などを調べます。mypy は CDK のコードも調べるので `infra` グループを指定します。
+```console
+uv run --locked python -m pytest -q tests/unit tests/test_api.py
+```
+
+レビュー前にコードと型を調べるには、次の2行を実行します。mypy は CDK のコードも読むため、`infra` グループを指定します。
 
 ```console
 uv run --locked ruff check package scripts tests
 uv run --locked --group infra mypy
 ```
 
-| 確かめたいこと | テストが調べるもの | 実行コマンド |
-| --- | --- | --- |
-| 入力条件やエラーの共通処理 | モデルや関数を直接呼び、空白、文字数の境界、余分な項目、エラー本文とヘッダーを確認する | `uv run --locked python -m pytest -q tests/unit` |
-| ルートと保存処理の連携 | テスト用 SQLite に登録し、FastAPI の TestClient で取得・更新・削除する。失敗後の状態や一覧の続きも読む | `uv run --locked python -m pytest -q tests/test_api.py` |
-| HTTP と PostgreSQL を通した業務の流れ | Compose の別コンテナから実際に HTTP リクエストを送り、DB を別の接続から読んで保存結果を照合する | `docker compose run --rm integration` |
-| 実際のレスポンスと公開仕様書の一致 | YAML の登録例4件、状態変更例4件を送り、期待値と照合する。5操作の成功レスポンスとエラーの形式も確認する | `uv run --locked --group contract python tests/contract/check.py` |
+HTTP と PostgreSQL まで通して確認するときは、冒頭の Compose コマンドをもう一度実行し、変更後の API を起動します。次の1行目は業務フローを、2行目は公開 YAML に載せた例と実際のレスポンスを確かめます。検証項目の選び方と各テストの範囲は第11章にまとめています。[第11章　API のテストを組み立てる](../../docs/11-testing.md)
 
-表の最初の2件は API を起動せずに実行できます。後ろの2件は、最初の手順で起動した API と PostgreSQL を使います。たとえば状態変更のテストでは、受付番号を指定して `PATCH` を送り、その番号を別の `GET` で読み直します。実行後の状態を確認すると、レスポンスを返したあとも変更が保存されているか分かります。
+```console
+docker compose run --rm integration
+uv run --locked --group contract python tests/contract/check.py
+```
 
-検証用 PostgreSQL のデータは一時領域にあり、DB コンテナを停止すると消えます。後片付けの `docker compose down --volumes` は、コンテナとローカル用の資格情報を置いたボリュームも削除します。
+検証用 PostgreSQL のデータは DB コンテナを停止すると消えます。作業を終えてローカル用の資格情報も片づけるときは、`docker compose down --volumes` を実行します。[Compose の設定](../../compose.yaml)
 
-## GitHub で検証結果を読む
+## 構築・運用へ引き継ぐ
 
-**Verify sample** は push とプルリクエストでテストを実行し、仕様書との一致、CDK の構成、Lambda イメージを検査します。AWS のデプロイ先を設定すると、`main` の検証に通ったコミットが引き続き最新版であることを確認して、**Deploy to AWS** がデプロイします。設定手順は [インフラの README](../infra/README.md) にあります。
+GitHub の **Verify sample** は、push とプルリクエストでテストを繰り返し、公開 YAML が現在のコードから生成できることも調べます。コードと仕様書の変更を一緒にレビューすると、利用者への影響を確認できます。[検証ワークフロー](../../.github/workflows/verify.yml)・[第13章　API のバージョンを上げる](../../docs/13-versioning.md)
 
-デプロイ後の疎通結果は、Actions の実行概要「AWS 実環境の疎通確認」で確認できます。署名なしの一覧取得は `403`、署名付きで `limit=1` なら `200`、`limit=0` なら `422` が期待値です。詳細は **Artifacts → aws-smoke-report** の `aws-smoke.json` に記録されます。`not_run` の場合は、同じレポートにデプロイ先が未設定などの理由が載ります。
+AWS の構成と配置手順は第10章、デプロイ後の疎通結果や障害時の確認は第12章で扱います。[第10章　AWS での構築](../../docs/10-aws.md)・[インフラの README](../infra/README.md)・[第12章　API の運用と監視を始める](../../docs/12-operations.md)
 
-## 出典と関連ファイル
+## 実装時の参照先
 
-- 仕様を決めてから実装までをたどる。[設計シート](../../docs/06-contract.md)・[OpenAPI 仕様書の書き方](../../docs/07-openapi.md)・[入出力の型と保存処理](../../docs/09-fastapi.md)
-- 起動と仕様書の生成。[Compose の設定](../../compose.yaml)・[出力コマンド](export_openapi.py)・[FastAPI の画面用ファイル](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/)・[FastAPI の名前付き入力例](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter)
-- テストの実装。[単体テスト](../../tests/unit)・[SQLite と FastAPI](../../tests/test_api.py)・[PostgreSQL との連携](../../tests/integration/test_repair_workflow.py)・[契約テスト](../../tests/contract/check.py)・[DB 権限の検査](../../tests/test_postgres.py)
-- 自動検証とデプロイの条件。[検証ワークフロー](../../.github/workflows/verify.yml)・[デプロイワークフロー](../../.github/workflows/deploy.yml)
+- 仕様を読み、入力例を追加する。[OpenAPI の書き方](../../docs/07-openapi.md)・[仕様書の生成コード](export_openapi.py)・[FastAPI の名前付き入力例](https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter)
+- 入力と保存結果をテストする。[単体テスト](../../tests/unit)・[FastAPI と SQLite](../../tests/test_api.py)・[HTTP と PostgreSQL](../../tests/integration/test_repair_workflow.py)・[公開 YAML の契約テスト](../../tests/contract/check.py)
+- Swagger UI の画面を表示するためのファイルを確認する。[FastAPI の画面用ファイル](https://fastapi.tiangolo.com/how-to/custom-docs-ui-assets/)
