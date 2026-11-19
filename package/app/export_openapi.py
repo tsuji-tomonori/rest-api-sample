@@ -1,4 +1,4 @@
-"""Export the FastAPI contract or compare it with a checked-in copy."""
+"""FastAPI から OpenAPI を書き出す。--check では保存済みの定義と照合する。"""
 
 import argparse
 import json
@@ -9,23 +9,29 @@ from .main import app
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("output", type=Path, help="path to the OpenAPI JSON file")
-    parser.add_argument("--check", action="store_true", help="report an outdated file without writing it")
+    parser.add_argument("outputs", nargs="+", type=Path, help="出力先。拡張子 .yaml と .yml は YAML、それ以外は JSON")
+    parser.add_argument("--check", action="store_true", help="ファイルを更新せず、生成結果との差を確認する")
     args = parser.parse_args()
-    # 同じ API からは同じファイルを生成する。キーの順序をそろえると、仕様の変更箇所を比較しやすい。
-    document = json.dumps(app.openapi(), ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    schema = app.openapi()
+    result = 0
+    for output in args.outputs:
+        if output.suffix.lower() in {".yaml", ".yml"}:
+            import yaml
 
-    # CI は --check で生成結果と公開用ファイルを照合し、違いがあれば終了コード 1 で知らせる。
-    if args.check:
-        if args.output.is_file() and args.output.read_text(encoding="utf-8") == document:
-            print(f"Up to date: {args.output}")
-            return 0
-        print(f"Regenerate the OpenAPI document: {args.output}")
-        return 1
+            document = yaml.safe_dump(schema, allow_unicode=True, sort_keys=False)
+        else:
+            document = json.dumps(schema, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
 
-    args.output.write_text(document, encoding="utf-8", newline="\n")
-    print(f"Wrote {args.output}")
-    return 0
+        # CI ではすべての出力先を調べ、一つでも古ければ終了コード 1 を返す。
+        if not args.check:
+            output.write_text(document, encoding="utf-8", newline="\n")
+            print(f"Wrote {output}")
+        elif output.is_file() and output.read_text(encoding="utf-8") == document:
+            print(f"Up to date: {output}")
+        else:
+            print(f"Regenerate the OpenAPI document: {output}")
+            result = 1
+    return result
 
 
 if __name__ == "__main__":

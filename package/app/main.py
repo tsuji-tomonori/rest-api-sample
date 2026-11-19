@@ -1,19 +1,22 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Response
+from fastapi import Body, Depends, FastAPI, HTTPException, Query, Response
 from mangum import Mangum
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from .database import RepairRequest, session
-from .http import configure_http, problems
-from .schemas import NewRepair, Repair, RepairId, RepairPage, Status, StatusChange
+from .http import NOT_FOUND, configure_http, problems
+from .schemas import (
+    NEW_REPAIR_EXAMPLES, NEW_REPAIR_NEGATIVE_EXAMPLES,
+    STATUS_CHANGE_EXAMPLES, STATUS_CHANGE_NEGATIVE_EXAMPLES,
+    NewRepair, Repair, RepairId, RepairPage, Status, StatusChange,
+)
 
 app = FastAPI(title="修理依頼 API", version="1.0.0")
 configure_http(app)
 # 引数を db: DB と書いた関数には、FastAPI が session() から受け取ったセッションを渡す。
 DB = Annotated[Session, Depends(session)]
-NOT_FOUND = "修理依頼が見つかりません。"
 
 
 # POST /repair-requests をこの関数に結び付ける。FastAPI は本文を NewRepair で検証し、結果を Repair の形で返す。
@@ -21,12 +24,15 @@ NOT_FOUND = "修理依頼が見つかりません。"
     "/repair-requests",
     status_code=201,
     response_model=Repair,
+    openapi_extra={"x-negative-examples": NEW_REPAIR_NEGATIVE_EXAMPLES},
     responses={
-        201: {"headers": {"Location": {"description": "登録した依頼のパス", "schema": {"type": "string"}}}},
+        201: {"headers": {"Location": {
+            "description": "登録した依頼のパス", "schema": {"type": "string"}, "example": "/repair-requests/42",
+        }}},
         **problems(400, 415, 422),
     },
 )
-def create_repair(data: NewRepair, response: Response, db: DB):
+def create_repair(data: Annotated[NewRepair, Body(openapi_examples=NEW_REPAIR_EXAMPLES)], response: Response, db: DB):
     repair = RepairRequest(**data.model_dump(), status="open")
     db.add(repair)
     # 登録が確定したら、採番された ID から取得先のパスを作る。
@@ -38,8 +44,8 @@ def create_repair(data: NewRepair, response: Response, db: DB):
 @app.get("/repair-requests", response_model=RepairPage, responses=problems(422))
 def list_repairs(
     db: DB,
-    status: Status | None = None,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    status: Annotated[Status | None, Query(openapi_examples={"first-page": {"value": "open"}})] = None,
+    limit: Annotated[int, Query(ge=1, le=100, openapi_examples={"first-page": {"value": 1}})] = 20,
     after: RepairId | None = None,
 ):
     query = select(RepairRequest).order_by(RepairRequest.id)
@@ -60,8 +66,13 @@ def get_repair(request_id: RepairId, db: DB):
     return repair
 
 
-@app.patch("/repair-requests/{request_id}", response_model=Repair, responses=problems(400, 404, 415, 422))
-def update_status(request_id: RepairId, data: StatusChange, db: DB):
+@app.patch(
+    "/repair-requests/{request_id}", response_model=Repair, responses=problems(400, 404, 415, 422),
+    openapi_extra={"x-negative-examples": STATUS_CHANGE_NEGATIVE_EXAMPLES},
+)
+def update_status(
+    request_id: RepairId, data: Annotated[StatusChange, Body(openapi_examples=STATUS_CHANGE_EXAMPLES)], db: DB,
+):
     statement = update(RepairRequest).where(RepairRequest.id == request_id).values(status=data.status)
     # RETURNING は同じ更新命令で変更後の行を返す。対象があれば変更を確定してから応答する。
     repair = db.scalar(statement.returning(RepairRequest))

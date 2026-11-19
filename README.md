@@ -18,15 +18,15 @@
 | [10　会議室予約の設計例](docs/10-practice.md) | 二重予約をどう防ぐか。登録や通知が途中で止まったとき、どこまで取り消し、どこから再開するか |
 | [11　API のバージョンを上げる](docs/11-versioning.md) | どの変更でメジャー番号を上げるか。API Gateway のステージと公開パスをどう使い、旧版から新版へ移行するか |
 
-HTTP メソッドや応答コードの意味は、本文から RFC の該当節で確認できます。パスを複数形にするか、ページを何件ずつ返すかといった設計者が決める項目には、選ぶ理由を添えています。修理依頼のサンプルが使う仕様は [OpenAPI 定義](docs/openapi.json) で読めます。
+HTTP メソッドや応答コードの意味は、本文から RFC の該当節で確認できます。パスを複数形にするか、ページを何件ずつ返すかといった設計者が決める項目には、選ぶ理由を添えています。修理依頼の [OpenAPI 定義（YAML）](docs/openapi.yaml)には、登録や更新に送る入力例と、そのときに期待する応答が載っています。
 
 ## サンプルコード
 
 | 場所 | 内容 |
 | --- | --- |
-| [package/app の実装・テストガイド](package/app/README.md) | FastAPI と PostgreSQL の起動、Swagger UI での操作、単体・結合・契約テスト、CI/CD |
+| [package/app の実装・テストガイド](package/app/README.md) | Swagger UI で1件を手動登録する。Ruff・mypy でコードを点検し、OpenAPI の入力例を起動中の API に送って応答を検証する |
 | [package/db](package/db) | Alembic によるテーブル定義とマイグレーション |
-| [package/infra](package/infra) | API Gateway・Lambda・Aurora をつなぐ Python CDK |
+| [package/infra のデプロイ手順](package/infra/README.md) | Python CDK で API Gateway・Lambda・Aurora をつなぎ、GitHub Actions で AWS への疎通結果を読む |
 | [tests](tests) | HTTP の契約と DB の権限を確かめるテスト |
 
 Python の依存関係は [pyproject.toml](pyproject.toml) にまとめ、[uv.lock](uv.lock) でバージョンを固定しています。サンプルを手元で起動するコマンドは[第8章](docs/08-fastapi.md)にあります。

@@ -13,7 +13,7 @@ aws sts get-caller-identity
 uv sync --locked --group infra
 cd package/infra
 cdk diff RepairApi
-cdk deploy RepairApi
+cdk deploy RepairApi --outputs-file cdk.out/repair-outputs.json
 ```
 
 Aurora のバージョンは [cdk.json](cdk.json) の `auroraVersion` で指定します。デプロイ先で作成できる PostgreSQL 17 系のバージョンを選んでください。[Aurora Serverless v2 の対応状況](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.requirements.html)
@@ -47,7 +47,7 @@ SIGN
 
 ## GitHub Actions から継続的にデプロイする
 
-[Deploy to AWS](../../.github/workflows/deploy.yml) は、`main` への push に対する `Verify sample` が成功したときに動きます。検証が通ったコミットをチェックアウトし、CDK のデプロイ、DB マイグレーション、署名付き `GET /repair-requests?limit=1` の順で確認します。GET は返った1ページをアプリの応答モデルと照合します。修理依頼の登録や削除は行いません。
+[Deploy to AWS](../../.github/workflows/deploy.yml) は、`main` への push に対する `Verify sample` が成功したときに動きます。検証が通ったコミットをチェックアウトし、CDK のデプロイ、DB マイグレーション、公開 URL からの疎通確認を順番に実行します。疎通確認には GET を使うので、既存の修理依頼をそのまま使えます。
 
 ### 初回に用意するもの
 
@@ -68,3 +68,24 @@ SIGN
 CI が成功したときと、デプロイの順番が来たときに、検証した SHA が `main` の先頭と一致するか確かめます。新しいコミットが先頭にあれば、古いコミットの配信をスキップします。稼働中のデプロイは中断せず、後続の配信と重ならないようにしています。[GitHub の workflow_run](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run) ・ [同時実行制御](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
 
 CDK は `DeploymentRoleName` を受け取り、今回のマイグレーション関数と API への呼び出し権限をデプロイ用ロールに付与します。マイグレーションの例外、完了を示す応答の欠落、一覧取得の失敗は、いずれもジョブの失敗として記録します。CloudFormation の適用後にマイグレーションや疎通確認で失敗した場合、スタックそのものは更新済みです。AWS 側の設定を直したら、現在の `main` の成功した push に対応する `Verify sample` を再実行できます。コードを直す場合は `main` への反映で検証からやり直します。[配信後の確認コード](post_deploy.py)
+
+### AWS の疎通結果を確認する
+
+Actions の **Deploy to AWS** を開き、ジョブ概要「AWS 実環境の疎通確認」を読みます。実行ページの **Artifacts → aws-smoke-report** に入った `aws-smoke.json` には、検査ごとの期待・実測 HTTP コード、試行回数、所要時間（ミリ秒）、失敗理由が記録されます。記録には認証情報や修理依頼の内容を含めません。[GitHub Actions の実行概要](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#adding-a-job-summary)・[実行結果の保存](https://docs.github.com/en/actions/tutorials/store-and-share-data)
+
+| 検査 ID | 呼び出しと期待する結果 | 確認する範囲 |
+| --- | --- | --- |
+| `migration` | 移行用 Lambda を同期実行して HTTP 200。関数内の例外がなく、完了応答が返る | Aurora 上のテーブルと API 用 DB ユーザーの準備 |
+| `iam` | 署名を付けずに一覧を取得して 403 | 公開 URL が未署名の要求を拒否する |
+| `list` | SigV4 署名付き `GET /repair-requests?limit=1` が 200。JSON が一覧モデルに合い、0件または1件返る | API Gateway から API 用 Lambda を経て Aurora を読む経路。空の DB でも確認できる |
+| `invalid_limit` | 署名付きで `limit=0` を送って 422。応答は `application/problem+json` で、本文の `status` も 422 | FastAPI の入力検証結果が Gateway を経て利用者に届く経路 |
+
+検査が途中で失敗すると CD は失敗し、実行済みの結果と後続の `not_run` を保存します。デプロイ先が未設定の場合は、全体が `not_run`、理由が `aws_target_not_configured` です。スタック更新に失敗した場合は `deployment_failed` と記録します。
+
+すでに構築した環境では、リポジトリのルートから次のコマンドで3つの HTTP 検査だけを再実行できます。上の `cdk deploy --outputs-file` が生成したファイルと、対象 API を呼べる AWS プロファイルを使います。テストが1つでも失敗すると終了コードは 1 です。
+
+```bash
+export AWS_DEFAULT_REGION=ap-northeast-1
+uv run --locked python -m package.infra.post_deploy package/infra/cdk.out/repair-outputs.json \
+  --smoke-only --report package/infra/cdk.out/aws-smoke.json
+```

@@ -5,6 +5,8 @@ __pycache__/
 .pytest_cache/
 .hypothesis/
 .ruff_cache/
+.mypy_cache/
 repairs.db*
+/aws-smoke.json
 cdk.out/
 cdk.context.json

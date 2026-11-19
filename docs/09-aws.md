@@ -63,6 +63,6 @@ API Gateway はメソッド、パス、ヘッダー、本文を、ペイロー�
 
 この画面を追加するなら、HTTP API の CORS 設定でオリジンとメソッドを指定し、`Content-Type`、`Authorization`、`X-Amz-Date` など実際に送るヘッダーを許可します。登録先を画面で読むには、`exposeHeaders` に `Location` を指定します。教材の `$default` ルートには IAM 認可があるため、事前確認用に認可を求めない `OPTIONS /{proxy+}` ルートを追加し、統合先を設定します。実際に登録する `POST` では、引き続き署名と `execute-api:Invoke` を確認します。[AWS「HTTP API の CORS 設定」](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html)
 
-AWS で試す場合は、[デプロイ・動作確認・削除の手順](../package/infra/README.md)に進んでください。次の章では、修理依頼で決めたことを手がかりに、別の業務の API を設計します。
+GitHub Actions から AWS にデプロイしたら、**Deploy to AWS** の実行概要で「AWS 実環境の疎通確認」を確認します。署名なしの要求を入口で拒んだか、署名付きの要求が DB まで届いて一覧を返したかを順に読めます。各検査の期待値と、AWS での起動から片づけまでの手順は[インフラの README](../package/infra/README.md)にあります。次の章では、修理依頼で決めたことを手がかりに、別の業務の API を設計します。
 
 [← 第8章　FastAPI で実装する](08-fastapi.md) ｜ [第10章　別の業務で設計してみる →](10-practice.md)
