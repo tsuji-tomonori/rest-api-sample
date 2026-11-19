@@ -1,0 +1,81 @@
+x-app: &app
+  build:
+    context: .
+    target: local
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: repairs
+      POSTGRES_USER: repair_admin
+      POSTGRES_PASSWORD_FILE: /run/repair-admin/password
+    # データはコンテナの停止時に消える。DB のポートはホストに公開しない。
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - admin-password:/run/repair-admin
+      - api-password:/run/repair-api
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        for file in /run/repair-admin/password /run/repair-api/password; do
+          if [ ! -s "$$file" ]; then
+            od -An -N32 -tx1 /dev/urandom | tr -d ' \n' > "$$file"
+            chmod 0444 "$$file"
+          fi
+        done
+        exec docker-entrypoint.sh postgres
+    healthcheck:
+      # 初期化専用の一時サーバーは Unix ソケットのみ。TCP で本起動を確かめる。
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "repair_admin", "-d", "repairs"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    <<: *app
+    depends_on:
+      db: { condition: service_healthy }
+    volumes:
+      - admin-password:/run/repair-admin:ro
+      - api-password:/run/repair-api:ro
+      - ./scripts/compose_migrate.py:/build/compose_migrate.py:ro
+    command: ["python", "compose_migrate.py"]
+
+  api:
+    <<: *app
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - api-password:/run/repair-api:ro
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export DATABASE_URL="postgresql+psycopg://repair_api:$$(cat /run/repair-api/password)@db/repairs"
+        exec python -m uvicorn package.app.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/repair-requests?limit=1', timeout=3).close()"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  integration:
+    <<: *app
+    profiles: [test]
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      REPAIR_COMPOSE_TEST: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - api-password:/run/repair-api:ro
+      - ./tests/integration:/build/tests/integration:ro
+    command: ["python", "-m", "pytest", "-p", "no:cacheprovider", "-q", "tests/integration"]
+
+volumes:
+  admin-password:
+  api-password:

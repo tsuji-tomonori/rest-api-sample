@@ -23,7 +23,7 @@ HTTP メソッドや応答コードの意味は、本文から RFC の該当節�
 
 | 場所 | 内容 |
 | --- | --- |
-| [package/app](package/app) | FastAPI のルート、入力と応答の型、OpenAPI の出力 |
+| [package/app の実装・テストガイド](package/app/README.md) | FastAPI と PostgreSQL の起動、Swagger UI での操作、単体・結合・契約テスト、CI/CD |
 | [package/db](package/db) | Alembic によるテーブル定義とマイグレーション |
 | [package/infra](package/infra) | API Gateway・Lambda・Aurora をつなぐ Python CDK |
 | [tests](tests) | HTTP の契約と DB の権限を確かめるテスト |

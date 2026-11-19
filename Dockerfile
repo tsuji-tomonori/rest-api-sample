@@ -7,6 +7,14 @@ WORKDIR /build
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project --no-cache --python /var/lang/bin/python3.12
 
+FROM dependencies AS local
+# Compose 用の段階には、実 HTTP を受ける uvicorn とテスト用の pytest も入れる。
+RUN uv sync --locked --no-install-project --no-cache --python /var/lang/bin/python3.12
+ENV PATH="/build/.venv/bin:${PATH}"
+COPY package/app /build/package/app
+COPY package/db /build/package/db
+ENTRYPOINT []
+
 FROM runtime
 # DB に接続するとき、この認証局の証明書を使って Aurora のサーバー証明書を検証する。
 ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /opt/rds-global-bundle.pem

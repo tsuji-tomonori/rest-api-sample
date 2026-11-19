@@ -1,0 +1,6 @@
+# GitHub Actions は queue: max をサポートする。actionlint 1.7.12 が未対応のこの項目だけを除外する。
+# https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency
+paths:
+  .github/workflows/deploy.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section\.'

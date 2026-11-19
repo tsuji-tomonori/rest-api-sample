@@ -12,7 +12,11 @@ def grant_api_access(connection: Connection, secret_arn: str) -> None:
     secret = json.loads(response["SecretString"])
     if secret["username"] != "repair_api":
         raise ValueError("The runtime secret must belong to repair_api")
+    grant_runtime_role(connection, secret["password"])
 
+
+def grant_runtime_role(connection: Connection, password: str) -> None:
+    """AWS とローカルのどちらでも、API の接続に同じ権限を与える。"""
     dbapi_connection = connection.connection.driver_connection
     with dbapi_connection.cursor() as cursor:
         cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = 'repair_api'")
@@ -20,7 +24,7 @@ def grant_api_access(connection: Connection, secret_arn: str) -> None:
             cursor.execute("CREATE ROLE repair_api LOGIN")
         # 平文のパスワードを SQL に含めず、接続ライブラリが計算した認証用の値を登録する。
         verifier = dbapi_connection.pgconn.encrypt_password(
-            secret["password"].encode("utf-8"), b"repair_api", b"scram-sha-256"
+            password.encode("utf-8"), b"repair_api", b"scram-sha-256"
         )
         cursor.execute(
             sql.SQL("ALTER ROLE repair_api PASSWORD {}").format(sql.Literal(verifier.decode("ascii")))
