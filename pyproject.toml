@@ -22,7 +22,7 @@ dev = [
     "pytest==9.0.3",
     "ruff==0.15.22",
     "types-PyYAML>=6,<7",
-    "uvicorn==0.40.0",
+    "uvicorn==0.54.0",
 ]
 contract = [
     "hypothesis>=6.130.12,<7",
