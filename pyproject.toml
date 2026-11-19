@@ -20,6 +20,9 @@ dev = [
     "uvicorn==0.40.0",
 ]
 contract = [
+    "hypothesis>=6.130.12,<7",
+    "playwright==1.60.0",
+    "requests>=2.22,<3",
     "schemathesis==4.33.4",
 ]
 infra = [
