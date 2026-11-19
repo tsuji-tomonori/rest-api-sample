@@ -3,6 +3,8 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '15 22 * * 1'
 
 permissions:
   contents: read
@@ -42,6 +44,14 @@ jobs:
         run: uv sync --locked --group infra
       - name: Lint Python with Ruff
         run: uv run --locked --group infra ruff check package scripts tests
+      - name: Check Python security rules
+        run: uv run --locked --group infra ruff check --select S package scripts
+      - name: Audit locked Python dependencies
+        run: |
+          uv export --locked --all-groups --no-emit-project --no-hashes -o "$RUNNER_TEMP/requirements.txt" >/dev/null
+          uvx pip-audit==2.10.0 --no-deps --disable-pip -r "$RUNNER_TEMP/requirements.txt"
+      - name: Check infrastructure cost, tags, security and snapshot
+        run: uv run --locked --group infra python -m pytest -q tests/infra
       - name: Check application, migration and infrastructure types
         run: uv run --locked --group infra mypy
       - name: Run isolated unit tests
