@@ -1,5 +1,6 @@
 """Chromium で Swagger UI を操作し、表示された依頼一覧を実際の応答と比べる。"""
 
+import argparse
 import json
 
 from playwright.sync_api import expect, sync_playwright
@@ -8,9 +9,9 @@ from playwright.sync_api import expect, sync_playwright
 BASE_URL = "http://127.0.0.1:8000"
 
 
-def main():
+def main(channel=None):
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
+        browser = playwright.chromium.launch(channel=channel)
         page = browser.new_page()
         page.set_default_timeout(45_000)
         page.goto(f"{BASE_URL}/docs", wait_until="domcontentloaded")
@@ -40,4 +41,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--channel", choices=["chrome"], help="インストール済みの Google Chrome を使う")
+    main(parser.parse_args().channel)

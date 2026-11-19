@@ -61,6 +61,8 @@ uv run --locked --group contract python -m playwright install chromium
 uv run --locked --group contract python tests/contract/swagger_ui.py
 ```
 
+CI ではランナーに入っている Google Chrome を `--channel chrome` で選び、同じ操作を確かめます。[Playwright が対応するブラウザー](https://playwright.dev/python/docs/browsers#google-chrome--microsoft-edge)・[GitHub ランナーの搭載ブラウザー](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#browsers-and-drivers)
+
 仕様を変更したら、次の1行目で配布用の JSON を再生成し、差分を読みます。2行目はファイルを書き換えず、コードから生成した内容と一致するかを検査します。実際に送受信した値やヘッダーは、上の契約テストで確かめます。[OpenAPI 出力コマンド](export_openapi.py)・[第7章の仕様書の読み方](../../docs/07-openapi.md)
 
 ```console
