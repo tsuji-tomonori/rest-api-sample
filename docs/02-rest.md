@@ -34,6 +34,6 @@ REST で名前を付けて扱う対象を **リソース** と呼びます。境
 | 通信を階層に分ける | 利用者に示した宛先を保ちながら、手前に中継や認証の仕組みを置ける |
 | 実行するコードを必要に応じて配る（任意） | ブラウザーなどにスクリプトを配り、配布後に機能を広げられる |
 
-各制約には代償もあります。たとえば、再利用できる応答は通信を減らせますが、その間に対象の状態が変わることがあります。API の設計では、利用者がどの程度新しい情報を必要とするかまで決めます。[Fielding §5.1.2–5.1.7](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm#sec_5_1_2)・[RFC 9111 §5.2.2](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2)
+各制約には代償もあります。たとえば、応答を再利用すると通信量は減りますが、その間に対象の状態が変わることがあります。前回の内容を保存してよいか、使う前に最新かどうかを確かめるかを決めましょう。[第5章「同じ内容をもう一度読むとき」](05-responses.md#同じ内容をもう一度読むとき)・[Fielding §5.1.2–5.1.7](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm#sec_5_1_2)・[RFC 9111 §5.2.2](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2)
 
 [前へ　API とは何か](01-api.md) ・ [目次](../README.md) ・ [次へ　パスとパラメータ](03-addresses.md)

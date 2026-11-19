@@ -18,6 +18,20 @@
 
 `PATCH` の本文は変更の指示です。「指定した項目をこの値にし、他の項目は保つ」というのは上の API が定めた約束です。JSON を採用するだけでは、省略された項目の扱いも、変更できる項目も決まりません。使う形式と操作の意味を契約に書きます。一度の `PATCH` が複数の変更を含む場合は、全部をまとめて適用し、一部だけ成功した状態を残しません。[RFC 5789 §2](https://www.rfc-editor.org/rfc/rfc5789.html#section-2)
 
+### 「完了」と「項目を空にする」をどう伝えるか
+
+修理依頼サンプルの「完了」ボタンは、`PATCH /repair-requests/42` に `Content-Type: application/json` を付けて `{"status":"completed"}` を送ります。42番があれば、件名と場所を保ったまま状態が変わり、`200` と更新後の依頼が返ります。ここで `status` は必須で、選べる値は `open` と `completed` です。本文が `{}`、`{"status":null}`、または `null` なら、サンプルは `422` を返します。[更新時の入力定義](../package/app/schemas.py)・[更新処理](../package/app/main.py)・[入力エラーの応答](../package/app/http.py)
+
+次に、修理依頼に「担当者を外す」ボタンを加えるとします。この設計例では担当者を `assignee_id` で表し、状態と担当者をそれぞれ変更できるようにします。担当者欄に触れずに保存したときと、意図して担当者を外したときは、異なる JSON を送ります。
+
+| 利用者がしたいこと | 送る JSON の例 | この設計での結果 |
+| --- | --- | --- |
+| 担当者を保ったまま完了にする | `{"status":"completed"}` | `assignee_id` は省略。状態だけを更新する |
+| 担当者を外す | `{"assignee_id":null}` | 割り当てを解除し、状態は保つ |
+| 担当者の欄から空文字が届く | `{"assignee_id":""}` | 空文字は有効な社員番号ではないので `422` を返す |
+
+JSON の `null` は値の一つです。項目の省略や空の文字列とは区別します。`application/json` で「担当者の `null` は割り当て解除」とするのは、この業務で選んだ約束です。[JSON Schema「null」](https://json-schema.org/understanding-json-schema/reference/null)
+
 ### 削除、アーカイブ、注文の取り消しを分ける
 
 「削除したい」と言われたら、まず**その後に同じ番号を開くと、何が見えるべきか**を確かめます。誤登録した下書きを台帳から取り除く例では、`DELETE /orders/42` に成功したら通常の一覧から42番が消え、個別に `GET /orders/42` しても `404` が返る、と決められます。HTTP の `DELETE` が求めるのは、その宛先と現在の機能との結び付きを取り除くことです。[RFC 9110 §9.3.5 DELETE](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.5)

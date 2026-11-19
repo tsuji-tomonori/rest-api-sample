@@ -59,6 +59,10 @@ API Gateway はメソッド、パス、ヘッダー、本文を、ペイロー�
 | Lambda は動くが、秘密の取得に失敗する | Lambda のログで、権限エラーなら対象シークレットの読み取り権限、タイムアウトならエンドポイントの DNS と TCP 443 |
 | DB 接続や SQL が失敗する | 接続タイムアウトなら `DB_HOST` と TCP 5432。テーブルや権限のエラーならマイグレーションの実行結果 |
 
+**コマンドでは登録できるのに、Web 画面からだけ失敗したら。** `https://staff.example.com` の画面から `https://api.example.com` を呼ぶと、ホスト名が違うので別の**オリジン**（スキーム・ホスト・ポートの組）になります。どのオリジンの画面に応答を読ませるかをブラウザーに伝える仕組みが **CORS** です。ブラウザーの開発者ツールで「ネットワーク」を開くと、署名付きの登録要求 `POST` の前に、許可を確かめる `OPTIONS` が見えます。その応答で、画面のオリジン、`POST`、署名や本文に使うヘッダーが許可されているかを確認します。[Fetch Standard「CORS protocol」](https://fetch.spec.whatwg.org/#http-cors-protocol)
+
+この画面を追加するなら、HTTP API の CORS 設定でオリジンとメソッドを指定し、`Content-Type`、`Authorization`、`X-Amz-Date` など実際に送るヘッダーを許可します。登録先を画面で読むには、`exposeHeaders` に `Location` を指定します。教材の `$default` ルートには IAM 認可があるため、事前確認用に認可を求めない `OPTIONS /{proxy+}` ルートを追加し、統合先を設定します。実際に登録する `POST` では、引き続き署名と `execute-api:Invoke` を確認します。[AWS「HTTP API の CORS 設定」](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html)
+
 AWS で試す場合は、[デプロイ・動作確認・削除の手順](../package/infra/README.md)に進んでください。次の章では、修理依頼で決めたことを手がかりに、別の業務の API を設計します。
 
 [← 第8章　FastAPI で実装する](08-fastapi.md) ｜ [第10章　別の業務で設計してみる →](10-practice.md)

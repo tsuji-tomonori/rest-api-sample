@@ -25,7 +25,12 @@
 
 修理が来週になる予定でも、今頼んだことが「台帳への登録」なら、保存した時点で `201` です。サンプルでは `Location: /repair-requests/42` のように登録先を知らせます。帳票作成の `202` は受付までを伝えるため、帳票ができたかどうかはその後に確かめます。[RFC 9110 §15.3 成功応答](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.3)・[§10.2.2 Location](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.2)
 
-取得した応答を保存して再利用できるかは、ヘッダーで伝えます。修理依頼サンプルは社内の台帳を扱うため、アプリが返す応答に `Cache-Control: no-store` を付け、キャッシュへの保存を禁じています。[RFC 9111 §5.2.2.5 no-store](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2.5)
+### 同じ内容をもう一度読むとき
+
+修理依頼サンプルは `Cache-Control: no-store` を返し、キャッシュへの保存を禁じています。一方、利用者別の表示設定をブラウザーに保存してよい API なら、`Cache-Control: private, no-cache` を選べます。`private` は共有キャッシュへの保存を禁じ、`no-cache` は保存済みの応答を使う前に、まだ使えるかをサーバーに確認するよう求めます。[RFC 9111 §5.2.2 応答のキャッシュ制御](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2)
+
+1. 初回の `GET /me/preferences` では、サーバーが `200 OK` と設定の本文を返し、その内容を識別する `ETag: "v3"` を添えます。
+2. 次回、ブラウザーは同じ宛先への `GET` に `If-None-Match: "v3"` を添えます。同じ版なら `304 Not Modified` が本文なしで返り、保存していた設定を表示できます。設定が変わっていれば、`200 OK` と新しい本文、更新後の `ETag` が返ります。[RFC 9110 §13.1.2 If-None-Match](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.2)・[§15.4.5 304](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.4.5)
 
 ## 4xx では、何を確かめれば先に進めるかを示す
 
@@ -70,6 +75,8 @@ Content-Type: application/problem+json
 ```
 
 プログラムは実際の HTTP ステータスを使って分岐します。同じコードの問題をさらに区別するときは、種類を示す `type` を読みます。この例の `about:blank` は、HTTP ステータスの意味をそのまま使うという指定です。`title` は種類の短い名前、`detail` は今回の状況を人に伝える説明です。アプリの手前にある API Gateway などが別形式の応答を返すこともあるため、呼び出し側は `Content-Type` を確かめて本文を読みます。[RFC 9457 §3.1](https://www.rfc-editor.org/rfc/rfc9457.html#section-3.1)・[§4.2.1](https://www.rfc-editor.org/rfc/rfc9457.html#section-4.2.1)
+
+修理依頼サンプルの `422` は、入力のどこを確かめればよいかを `detail` の文章で伝えます。画面が該当する入力欄の横に理由を表示したいなら、入力エラー用の `type` を定め、本文に `"errors":[{"pointer":"#/title","detail":"件名を入力してください"}]` を加える設計もできます。`errors` はこの設計で加えた項目です。画面は `pointer` で件名欄を選び、`detail` を人に見せるので、案内文を書き換えても正しい欄に表示できます。[RFC 9457 §3 検証エラーの例](https://www.rfc-editor.org/rfc/rfc9457.html#section-3)・[§3.1.4 detail](https://www.rfc-editor.org/rfc/rfc9457.html#section-3.1.4)
 
 ## 変更の上書きを防ぎたいときは 412 を使う
 
